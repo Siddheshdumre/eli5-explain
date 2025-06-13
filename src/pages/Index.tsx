@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MicOff, Volume2, Brain, BookOpen, Search } from "lucide-react";
+import { Mic, MicOff, Volume2, Brain, BookOpen, Search, Sparkles, Users, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -172,117 +172,194 @@ The explanation would be tailored to the ${level} level and formatted in a ${sty
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Brain className="h-12 w-12 text-blue-600" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ELI5.AI
-            </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <div className="relative">
+                <Brain className="h-16 w-16 text-blue-600" />
+                <div className="absolute -top-1 -right-1">
+                  <Sparkles className="h-6 w-6 text-yellow-500" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  ELI5.AI
+                </h1>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <div className="h-1 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
+                  <div className="h-1 w-4 bg-gradient-to-r from-purple-500 to-indigo-500 rounded"></div>
+                  <div className="h-1 w-2 bg-indigo-500 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <p className="text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Transform complex topics into clear, engaging explanations tailored to your learning level
+            </p>
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                <span>Multiple difficulty levels</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-500" />
+                <span>Voice interaction</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-indigo-500" />
+                <span>Wikipedia integration</span>
+              </div>
+            </div>
           </div>
-          <p className="text-xl text-gray-600">Explain anything at different difficulty levels</p>
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-16 space-y-8">
         {/* Main Input Card */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Search className="h-6 w-6 text-blue-600" />
+              </div>
               Ask Your Question
             </CardTitle>
-            <CardDescription>
-              Type your question or use voice input to get an explanation
+            <CardDescription className="text-gray-600 text-lg">
+              Type your question or use voice input to get a personalized explanation
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
+          <CardContent className="p-8 space-y-6">
+            <div className="flex gap-3">
               <Input
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask me anything..."
-                className="flex-1"
+                placeholder="What would you like to understand today?"
+                className="flex-1 h-14 text-lg border-2 border-gray-200 focus:border-blue-500 transition-colors"
                 onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
               />
               <Button
                 onClick={isListening ? stopListening : startListening}
                 variant={isListening ? "destructive" : "outline"}
-                size="icon"
+                size="lg"
+                className="h-14 w-14 border-2"
               >
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {isListening ? (
+                  <MicOff className="h-6 w-6" />
+                ) : (
+                  <Mic className="h-6 w-6" />
+                )}
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty Level</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="difficulty" className="text-lg font-semibold text-gray-700">
+                  Difficulty Level
+                </Label>
                 <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="eli5">ELI5 (Child)</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="expert">Expert</SelectItem>
+                    <SelectItem value="eli5">🧒 ELI5 (Child-friendly)</SelectItem>
+                    <SelectItem value="intermediate">🎓 Intermediate (Teenager)</SelectItem>
+                    <SelectItem value="expert">👨‍🎓 Expert (Graduate level)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="format">Answer Style</Label>
+              <div className="space-y-3">
+                <Label htmlFor="format" className="text-lg font-semibold text-gray-700">
+                  Answer Style
+                </Label>
                 <Select value={format} onValueChange={setFormat}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="storytelling">Storytelling</SelectItem>
-                    <SelectItem value="technical">Technical Breakdown</SelectItem>
+                    <SelectItem value="standard">📝 Standard explanation</SelectItem>
+                    <SelectItem value="storytelling">📚 Storytelling with analogies</SelectItem>
+                    <SelectItem value="technical">⚙️ Technical breakdown</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <Button onClick={handleSubmit} disabled={isLoading} className="w-full">
-              {isLoading ? "Generating Answer..." : "Get Explanation"}
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isLoading} 
+              className="w-full h-14 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Generating your explanation...
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Brain className="h-5 w-5" />
+                  Get Explanation
+                </div>
+              )}
             </Button>
           </CardContent>
         </Card>
 
         {/* Wikipedia Summary */}
         {wikipediaSummary && (
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-100">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-green-600" />
+                </div>
                 Background Information
               </CardTitle>
+              <CardDescription className="text-gray-600">
+                Context from Wikipedia to enhance your explanation
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 leading-relaxed">{wikipediaSummary}</p>
+            <CardContent className="p-6">
+              <div className="prose prose-lg max-w-none">
+                <p className="text-gray-700 leading-relaxed text-lg">{wikipediaSummary}</p>
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Answer */}
         {answer && (
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 justify-between">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Your Explanation
-                </div>
-                <Button onClick={speakAnswer} variant="outline" size="sm">
-                  <Volume2 className="h-4 w-4 mr-2" />
-                  Speak Answer
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Brain className="h-5 w-5 text-purple-600" />
+                  </div>
+                  Your Personalized Explanation
+                </CardTitle>
+                <Button 
+                  onClick={speakAnswer} 
+                  variant="outline" 
+                  size="lg"
+                  className="border-2 border-purple-200 hover:bg-purple-50 transition-colors"
+                >
+                  <Volume2 className="h-5 w-5 mr-2 text-purple-600" />
+                  Listen
                 </Button>
-              </CardTitle>
+              </div>
+              <CardDescription className="text-gray-600">
+                Tailored to your selected difficulty level and format preferences
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <p className="text-gray-800 leading-relaxed whitespace-pre-line">{answer}</p>
+            <CardContent className="p-8">
+              <div className="prose prose-lg max-w-none">
+                <div className="text-gray-800 leading-relaxed text-lg whitespace-pre-line bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200">
+                  {answer}
+                </div>
               </div>
             </CardContent>
           </Card>
