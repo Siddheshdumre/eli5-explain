@@ -170,7 +170,7 @@ The explanation would be tailored to the ${level} level and formatted in a ${sty
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black">
       <HeroSection />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-16 space-y-8">

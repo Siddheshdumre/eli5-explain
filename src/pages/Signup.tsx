@@ -59,15 +59,15 @@ const Signup = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Left side - Benefits */}
         <div className="hidden lg:block space-y-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-white mb-4">
               Join ELI5.AI Today
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-300">
               Start your journey to better understanding with our AI-powered explanations.
             </p>
           </div>
@@ -75,34 +75,34 @@ const Signup = () => {
           <div className="space-y-4">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                <span className="text-gray-700">{benefit}</span>
+                <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                <span className="text-gray-300">{benefit}</span>
               </div>
             ))}
           </div>
 
-          <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-xl">
-            <p className="text-sm text-gray-600 italic">
+          <div className="bg-gradient-to-r from-gray-800/50 to-slate-800/50 p-6 rounded-xl border border-gray-700">
+            <p className="text-sm text-gray-300 italic">
               "ELI5.AI helped me understand complex topics in minutes that used to take hours to research!"
             </p>
-            <p className="text-sm font-medium text-gray-800 mt-2">- Sarah K., Student</p>
+            <p className="text-sm font-medium text-white mt-2">- Sarah K., Student</p>
           </div>
         </div>
 
         {/* Right side - Signup form */}
         <div>
-          <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors">
+          <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Link>
 
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-2xl border border-gray-800 bg-gray-900/90 backdrop-blur-xl">
             <CardHeader className="text-center space-y-4">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
                 <Brain className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-2xl">Create Your Account</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl text-white">Create Your Account</CardTitle>
+              <CardDescription className="text-gray-400">
                 Start learning with personalized AI explanations
               </CardDescription>
             </CardHeader>
@@ -110,7 +110,7 @@ const Signup = () => {
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name" className="text-gray-300">Full Name</Label>
                   <Input
                     id="name"
                     name="name"
@@ -119,10 +119,11 @@ const Signup = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-gray-300">Email</Label>
                   <Input
                     id="email"
                     name="email"
@@ -131,10 +132,11 @@ const Signup = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-gray-300">Password</Label>
                   <Input
                     id="password"
                     name="password"
@@ -143,10 +145,11 @@ const Signup = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-gray-300">Confirm Password</Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -155,6 +158,7 @@ const Signup = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
                   />
                 </div>
               </CardContent>
@@ -162,15 +166,15 @@ const Signup = () => {
               <CardFooter className="flex flex-col space-y-4">
                 <Button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
                 
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-gray-400">
                   Already have an account?{" "}
-                  <Link to="/login" className="text-blue-600 hover:underline font-medium">
+                  <Link to="/login" className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
                     Sign in
                   </Link>
                 </p>
