@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Signup from "./pages/Signup";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import NotFound from "./pages/NotFound";
+import { ELI5Question } from "./components/ELI5Question";
 
 const queryClient = new QueryClient();
 

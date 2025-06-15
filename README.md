@@ -1,73 +1,112 @@
-# Welcome to your Lovable project
+# ELI5 - Explain Like I'm Five
 
-## Project info
+An AI-powered application that explains complex topics in simple terms, using the Mistral 7B model through Together API. The application provides explanations at different difficulty levels (Child, Teen, Adult) and in various formats (Standard, Story, Technical).
 
-**URL**: https://lovable.dev/projects/adaa27f8-7da4-41f0-91a4-d82cf4c8cfc9
+## Features
 
-## How can I edit this code?
+- 🤖 Powered by Mistral 7B AI model via Together API
+- 📚 Wikipedia integration for context-aware explanations
+- 🎯 Multiple difficulty levels:
+  - ELI5 (Child) - Simple explanations for young children
+  - Teen - More detailed explanations for teenagers
+  - Adult - Comprehensive explanations for adults
+- 📝 Multiple explanation formats:
+  - Standard - Clear and concise explanations
+  - Story - Narrative-style explanations
+  - Technical - Detailed technical explanations
+- 🎨 Modern UI built with React, TypeScript, and Shadcn UI
+- ⚡ Fast backend using FastAPI
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+### Frontend
+- React
+- TypeScript
+- Vite
+- Shadcn UI
+- Tailwind CSS
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/adaa27f8-7da4-41f0-91a4-d82cf4c8cfc9) and start prompting.
+### Backend
+- FastAPI
+- Python
+- Together API (Mistral 7B)
+- Wikipedia API
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup
 
-**Use your preferred IDE**
+### Prerequisites
+- Node.js (v16 or higher)
+- Python 3.8 or higher
+- Together API key
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend Setup
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/eli5-explain.git
+cd eli5-explain
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies
+```bash
+npm install
+```
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Backend Setup
+1. Navigate to the backend directory
+```bash
+cd backend
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+2. Create and activate virtual environment
+```bash
+python -m venv venv
+# On Windows
+.\venv\Scripts\activate
+# On Unix/MacOS
+source venv/bin/activate
+```
 
-**Use GitHub Codespaces**
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+4. Create a `.env` file in the backend directory with your Together API key:
+```
+TOGETHER_API_KEY=your_api_key_here
+TOGETHER_MODEL=mistralai/Mistral-7B-Instruct-v0.2
+PORT=8000
+ENVIRONMENT=development
+```
 
-## What technologies are used for this project?
+5. Start the backend server
+```bash
+uvicorn main:app --reload --port 8000
+```
 
-This project is built with:
+## Usage
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Open http://localhost:8081/app in your browser
+2. Enter your question in the text box
+3. Select your preferred difficulty level
+4. Choose your preferred format
+5. Click "Ask Question" to get your explanation
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/adaa27f8-7da4-41f0-91a4-d82cf4c8cfc9) and click on Share -> Publish.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Can I connect a custom domain to my Lovable project?
+## License
 
-Yes, you can!
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Acknowledgments
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- [Together AI](https://www.together.ai/) for providing the Mistral 7B API
+- [Wikipedia](https://www.wikipedia.org/) for content context
+- [Shadcn UI](https://ui.shadcn.com/) for the beautiful UI components
