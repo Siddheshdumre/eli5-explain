@@ -103,7 +103,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+> ⚠️ This is a **proprietary project** by Siddhesh Dumre.
+> All rights reserved. No part of this code may be used, copied, or modified without explicit permission.
 
 ## Acknowledgments
 
