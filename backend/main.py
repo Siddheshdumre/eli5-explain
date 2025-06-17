@@ -8,7 +8,13 @@ from dotenv import load_dotenv
 import requests
 
 # Load environment variables
-load_dotenv()
+load_dotenv(".env")
+print("TOGETHER_API_KEY (debug):", os.getenv("TOGETHER_API_KEY"))
+
+# Hardcode the API key and model
+TOGETHER_API_KEY = "59d52ed2a9cc794d48bb56e40b35fc13302224fc48e6467eed728933879cc164"
+TOGETHER_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
+TOGETHER_API_URL = "https://api.together.xyz/v1/completions"
 
 app = FastAPI(title="ELI5 Universe Builder API")
 
@@ -20,10 +26,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
-TOGETHER_MODEL = os.getenv("TOGETHER_MODEL", "mistralai/Mistral-7B-Instruct-v0.2")
-TOGETHER_API_URL = "https://api.together.xyz/v1/completions"
 
 class QuestionRequest(BaseModel):
     question: str
