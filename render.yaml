@@ -1,0 +1,33 @@
+services:
+  # Backend API Service
+  - type: web
+    name: eli5-backend
+    env: python
+    plan: free
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TOGETHER_API_KEY
+        value: 59d52ed2a9cc794d48bb56e40b35fc13302224fc48e6467eed728933879cc164
+      - key: FRONTEND_URL
+        value: https://eli5-frontend.onrender.com
+    healthCheckPath: /api/health
+
+  # Frontend Service
+  - type: web
+    name: eli5-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://eli5-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html 

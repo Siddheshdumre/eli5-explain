@@ -6,17 +6,30 @@ import wikipedia
 import os
 import requests
 
-# Hardcode the API key and model
-TOGETHER_API_KEY = "59d52ed2a9cc794d48bb56e40b35fc13302224fc48e6467eed728933879cc164"
+# Get API key from environment variable or use hardcoded one for development
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "59d52ed2a9cc794d48bb56e40b35fc13302224fc48e6467eed728933879cc164")
 TOGETHER_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
 TOGETHER_API_URL = "https://api.together.xyz/v1/completions"
 
 app = FastAPI(title="ELI5 Universe Builder API")
 
-# Configure CORS
+# Configure CORS for production
+allowed_origins = [
+    "http://localhost:8080",
+    "http://localhost:8081", 
+    "http://localhost:8082",
+    "http://localhost:8083",
+    "https://eli5-explain.onrender.com",  # Add your Render frontend URL
+    "https://your-frontend-app.onrender.com"  # Replace with your actual frontend URL
+]
+
+# Add environment variable for additional origins
+if os.getenv("FRONTEND_URL"):
+    allowed_origins.append(os.getenv("FRONTEND_URL"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
