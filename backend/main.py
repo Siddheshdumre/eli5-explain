@@ -4,12 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 import wikipedia
 import os
-from dotenv import load_dotenv
 import requests
-
-# Load environment variables
-load_dotenv(".env")
-print("TOGETHER_API_KEY (debug):", os.getenv("TOGETHER_API_KEY"))
 
 # Hardcode the API key and model
 TOGETHER_API_KEY = "59d52ed2a9cc794d48bb56e40b35fc13302224fc48e6467eed728933879cc164"
@@ -21,7 +16,7 @@ app = FastAPI(title="ELI5 Universe Builder API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:8080", "http://127.0.0.1:8081"],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
