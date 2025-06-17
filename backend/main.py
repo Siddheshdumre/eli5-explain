@@ -19,13 +19,17 @@ allowed_origins = [
     "http://localhost:8081", 
     "http://localhost:8082",
     "http://localhost:8083",
-    "https://eli5-explain.onrender.com",  # Add your Render frontend URL
-    "https://your-frontend-app.onrender.com"  # Replace with your actual frontend URL
+    "https://eli5-frontend.onrender.com",  # Your Render frontend URL
 ]
 
 # Add environment variable for additional origins
 if os.getenv("FRONTEND_URL"):
     allowed_origins.append(os.getenv("FRONTEND_URL"))
+
+# Add CORS_ORIGINS environment variable support
+if os.getenv("CORS_ORIGINS"):
+    additional_origins = os.getenv("CORS_ORIGINS").split(",")
+    allowed_origins.extend([origin.strip() for origin in additional_origins])
 
 app.add_middleware(
     CORSMiddleware,

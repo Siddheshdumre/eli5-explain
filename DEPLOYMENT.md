@@ -1,149 +1,129 @@
 # ELI5 Application Deployment Guide
 
-## Deploying to Render
+## Overview
+This guide will help you deploy the ELI5 application to Render.com, which includes both a FastAPI backend and a React frontend.
 
-This guide will help you deploy your ELI5 application to Render with both frontend and backend services.
+## Prerequisites
+- A Render.com account
+- Your code pushed to a Git repository (GitHub, GitLab, etc.)
+- Together AI API key (already configured)
 
-### Prerequisites
+## Deployment Steps
 
-1. A Render account (free tier available)
-2. Your GitHub repository connected to Render
-3. Together AI API key
+### 1. Prepare Your Repository
+Ensure your repository contains:
+- `render.yaml` - Deployment configuration
+- `backend/` - FastAPI application
+- `src/` - React frontend
+- `package.json` - Frontend dependencies
+- `backend/requirements.txt` - Backend dependencies
 
-### Step 1: Prepare Your Repository
-
-The following files have been created/updated for deployment:
-
-- `render.yaml` - Render deployment configuration
-- `backend/Procfile` - Backend service configuration
-- `backend/requirements.txt` - Updated with production dependencies
-- `vite.config.ts` - Updated for production builds
-- `src/components/ELI5Question.tsx` - Updated to use environment variables
-
-### Step 2: Deploy to Render
+### 2. Deploy to Render
 
 #### Option A: Using render.yaml (Recommended)
-
-1. **Push your code to GitHub**:
-   ```bash
-   git add .
-   git commit -m "Add deployment configuration"
-   git push origin main
-   ```
-
-2. **Connect to Render**:
-   - Go to [render.com](https://render.com)
-   - Sign up/Login with your GitHub account
-   - Click "New +" → "Blueprint"
-   - Connect your GitHub repository
-   - Render will automatically detect the `render.yaml` file
-
-3. **Configure Environment Variables**:
-   - In the Render dashboard, go to your backend service
-   - Navigate to "Environment" tab
-   - Add the following environment variables:
-     - `TOGETHER_API_KEY`: Your Together AI API key
-     - `FRONTEND_URL`: Your frontend URL (will be provided after deployment)
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click "New +" and select "Blueprint"
+3. Connect your Git repository
+4. Render will automatically detect the `render.yaml` file
+5. Click "Apply" to deploy both services
 
 #### Option B: Manual Deployment
+If you prefer to deploy services individually:
 
-If you prefer to deploy services manually:
-
-##### Backend Service
-1. Create a new "Web Service"
-2. Connect your GitHub repository
-3. Configure:
+**Backend Service:**
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click "New +" and select "Web Service"
+3. Connect your Git repository
+4. Configure:
    - **Name**: `eli5-backend`
    - **Environment**: `Python`
    - **Build Command**: `cd backend && pip install -r requirements.txt`
-   - **Start Command**: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - **Health Check Path**: `/api/health`
+   - **Start Command**: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1`
+   - **Plan**: Free
 
-##### Frontend Service
-1. Create a new "Static Site"
-2. Connect your GitHub repository
+**Frontend Service:**
+1. Click "New +" and select "Static Site"
+2. Connect your Git repository
 3. Configure:
    - **Name**: `eli5-frontend`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm ci && npm run build`
    - **Publish Directory**: `dist`
-   - **Environment Variable**: `VITE_API_URL` = your backend URL
+   - **Plan**: Free
 
-### Step 3: Update URLs
+### 3. Environment Variables
 
-After deployment, update the URLs in your configuration:
+#### Backend Environment Variables:
+- `TOGETHER_API_KEY`: Your Together AI API key (already configured)
+- `FRONTEND_URL`: `https://eli5-frontend.onrender.com`
+- `CORS_ORIGINS`: `https://eli5-frontend.onrender.com,http://localhost:3000,http://localhost:8080`
 
-1. **Update `render.yaml`**:
-   - Replace `https://eli5-frontend.onrender.com` with your actual frontend URL
-   - Replace `https://eli5-backend.onrender.com` with your actual backend URL
+#### Frontend Environment Variables:
+- `VITE_API_URL`: `https://eli5-backend.onrender.com`
 
-2. **Update environment variables**:
-   - Set `FRONTEND_URL` in backend service to your frontend URL
-   - Set `VITE_API_URL` in frontend service to your backend URL
+### 4. Post-Deployment
 
-### Step 4: Test Your Deployment
+1. **Test the Backend**: Visit `https://eli5-backend.onrender.com/api/health`
+2. **Test the Frontend**: Visit `https://eli5-frontend.onrender.com`
+3. **Verify CORS**: Ensure the frontend can communicate with the backend
 
-1. **Test Backend Health**: Visit `https://your-backend-url.onrender.com/api/health`
-2. **Test Frontend**: Visit your frontend URL and try asking a question
-3. **Check Logs**: Monitor both services in the Render dashboard
+### 5. Custom Domain (Optional)
+1. In your Render dashboard, go to your service
+2. Click "Settings" → "Custom Domains"
+3. Add your domain and configure DNS
 
-### Common Issues and Solutions
+## Troubleshooting
 
-#### 1. CORS Errors
-- Ensure `FRONTEND_URL` is set correctly in backend environment variables
-- Check that your frontend URL is in the `allowed_origins` list in `backend/main.py`
+### Common Issues:
 
-#### 2. API Key Issues
-- Verify `TOGETHER_API_KEY` is set in backend environment variables
-- Check that the API key is valid and has sufficient credits
+1. **Build Failures**:
+   - Check the build logs in Render dashboard
+   - Ensure all dependencies are in `requirements.txt` and `package.json`
 
-#### 3. Build Failures
-- Check that all dependencies are in `requirements.txt`
-- Ensure Node.js version is compatible (Render uses Node 18+)
+2. **CORS Errors**:
+   - Verify the `CORS_ORIGINS` environment variable includes your frontend URL
+   - Check that the frontend URL in `VITE_API_URL` matches your backend URL
 
-#### 4. Frontend Not Loading
-- Verify `VITE_API_URL` is set correctly
-- Check that the build completed successfully
-- Ensure the `dist` folder is being served correctly
+3. **API Key Issues**:
+   - Ensure the `TOGETHER_API_KEY` is set correctly
+   - Test the API key locally first
 
-### Environment Variables Reference
+4. **Service Not Starting**:
+   - Check the start command in render.yaml
+   - Verify the port configuration uses `$PORT`
 
-#### Backend Variables
-- `TOGETHER_API_KEY`: Your Together AI API key
-- `FRONTEND_URL`: Your frontend application URL
-- `PORT`: Automatically set by Render
+### Health Check Endpoints:
+- Backend: `https://eli5-backend.onrender.com/api/health`
+- Should return: `{"status": "healthy", "together_api": true}`
 
-#### Frontend Variables
-- `VITE_API_URL`: Your backend API URL
+## Monitoring
 
-### Monitoring and Maintenance
+1. **Logs**: View real-time logs in the Render dashboard
+2. **Metrics**: Monitor performance and usage
+3. **Alerts**: Set up notifications for service issues
 
-1. **Health Checks**: Both services have health check endpoints
-2. **Logs**: Monitor logs in the Render dashboard
-3. **Scaling**: Upgrade to paid plans for better performance
-4. **Custom Domains**: Add custom domains in the Render dashboard
+## Updates
 
-### Security Considerations
+To update your deployment:
+1. Push changes to your Git repository
+2. Render will automatically redeploy (if auto-deploy is enabled)
+3. Or manually trigger a deploy from the dashboard
 
-1. **API Keys**: Never commit API keys to your repository
-2. **CORS**: Configure CORS properly for production
-3. **Environment Variables**: Use Render's environment variable system
-4. **HTTPS**: Render provides SSL certificates automatically
+## Cost Optimization
 
-### Cost Optimization
+- Both services are configured for the free plan
+- Monitor usage to avoid exceeding free tier limits
+- Consider upgrading if you need more resources
 
-- Free tier includes:
-  - 750 hours/month per service
-  - Services sleep after 15 minutes of inactivity
-  - Limited bandwidth and build minutes
-- Consider upgrading for:
-  - Always-on services
-  - Better performance
-  - More resources
+## Security Notes
 
-### Support
+- API keys are stored as environment variables
+- CORS is properly configured for production
+- No sensitive data is exposed in the frontend
+
+## Support
 
 If you encounter issues:
-1. Check Render's documentation
-2. Review service logs in the dashboard
-3. Verify environment variables are set correctly
-4. Test locally before deploying 
+1. Check the Render documentation
+2. Review the build and runtime logs
+3. Test locally to isolate issues
+4. Contact Render support if needed 
