@@ -19,7 +19,7 @@ allowed_origins = [
     "http://localhost:8081", 
     "http://localhost:8082",
     "http://localhost:8083",
-    "https://eli5-frontend.onrender.com",  # Your Render frontend URL
+    "https://eli5-explain.vercel.app/",  # Your Render frontend URL
 ]
 
 # Add environment variable for additional origins
