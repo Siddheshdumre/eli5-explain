@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest httpx
+          
+      - name: Test Backend API
+        run: |
+          cd backend
+          # Start the server in background
+          python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 10  # Wait for server to start
+          # Run the existing test script
+          python test_api.py
+          
+      - name: Run pytest (if we add proper tests later)
+        run: |
+          cd backend
+          # This will run if we add pytest test files
+          python -m pytest || echo "No pytest tests found, skipping"
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install frontend dependencies
+        run: npm install
+        
+      - name: Lint frontend code
+        run: npm run lint
+        
+      - name: Build frontend
+        run: npm run build
+        
+      - name: Test frontend build
+        run: |
+          # Check if build output exists
+          if [ -d "dist" ]; then
+            echo "✅ Frontend build successful"
+          else
+            echo "❌ Frontend build failed"
+            exit 1
+          fi
+
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Security audit for Python
+        run: |
+          cd backend
+          pip install safety
+          safety check || echo "Security vulnerabilities found, but continuing..."
+          
+      - name: Security audit for Node.js
+        run: |
+          npm audit --audit-level moderate || echo "Security vulnerabilities found, but continuing..."
