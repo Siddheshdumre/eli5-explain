@@ -1,10 +1,10 @@
 # ELI5 - Explain Like I'm Five
 
-An AI-powered application that explains complex topics in simple terms, using the Mistral 7B model through Together API. The application provides explanations at different difficulty levels (Child, Teen, Adult) and in various formats (Standard, Story, Technical).
+An AI-powered application that explains complex topics in simple terms, using the Llama 3 model via the Groq API. The application provides explanations at different difficulty levels (Child, Teen, Adult) and in various formats (Standard, Story, Technical).
 
 ## Features
 
-- 🤖 Powered by Mistral 7B AI model via Together API
+- 🤖 Powered by Llama 3 (Groq API)
 - 📚 Wikipedia integration for context-aware explanations
 - 🎯 Multiple difficulty levels:
   - ELI5 (Child) - Simple explanations for young children
@@ -29,15 +29,33 @@ An AI-powered application that explains complex topics in simple terms, using th
 ### Backend
 - FastAPI
 - Python
-- Together API (Mistral 7B)
+- Groq API (Llama 3)
 - Wikipedia API
 
 ## Setup
 
+### 🚀 Docker Deployment (Recommended)
+
+You can run the entire application (frontend and backend) using Docker. This is the easiest way to get started and ensures all dependencies are handled automatically.
+
+#### 1. Build and start the containers
+```bash
+docker compose up --build
+```
+
+#### 2. Access the app
+- Frontend: http://localhost:8081/app
+- Backend API: http://localhost:8000
+
+#### 3. Environment Variables
+Copy `env.example` to `.env` and fill in your Groq API key and other settings as needed before starting Docker.
+
+---
+
 ### Prerequisites
 - Node.js (v16 or higher)
 - Python 3.8 or higher
-- Together API key
+- Groq API key
 
 ### Frontend Setup
 1. Clone the repository
@@ -56,38 +74,16 @@ npm install
 npm run dev
 ```
 
-### Backend Setup
+
+### Backend Setup (Manual, for development only)
+If you prefer not to use Docker, you can run the backend manually:
 1. Navigate to the backend directory
-```bash
-cd backend
-```
+2. Create and activate a virtual environment
+3. Install dependencies with `pip install -r requirements.txt`
+4. Create a `.env` file with your Groq API key and settings
+5. Start the backend server with `uvicorn main:app --reload --port 8000`
 
-2. Create and activate virtual environment
-```bash
-python -m venv venv
-# On Windows
-.\venv\Scripts\activate
-# On Unix/MacOS
-source venv/bin/activate
-```
-
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-4. Create a `.env` file in the backend directory with your Together API key:
-```
-TOGETHER_API_KEY=your_api_key_here
-TOGETHER_MODEL=mistralai/Mistral-7B-Instruct-v0.2
-PORT=8000
-ENVIRONMENT=development
-```
-
-5. Start the backend server
-```bash
-uvicorn main:app --reload --port 8000
-```
+> **Note:** For most users, Docker is the recommended approach.
 
 ## Usage
 
@@ -108,6 +104,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
-- [Together AI](https://www.together.ai/) for providing the Mistral 7B API
+- [Groq](https://console.groq.com/) for providing the Llama 3 API
 - [Wikipedia](https://www.wikipedia.org/) for content context
 - [Shadcn UI](https://ui.shadcn.com/) for the beautiful UI components
