@@ -136,20 +136,6 @@ export function ELI5Question() {
 
       {response && (
         <div className="space-y-6">
-          {response.wikipedia_summary && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Book className="h-5 w-5" />
-                  Wikipedia Context
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{response.wikipedia_summary}</p>
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -167,6 +153,20 @@ export function ELI5Question() {
               </div>
             </CardContent>
           </Card>
+
+          {response.wikipedia_summary && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Book className="h-5 w-5" />
+                  Wikipedia Context
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">{response.wikipedia_summary}</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>
