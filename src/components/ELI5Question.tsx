@@ -32,9 +32,8 @@ export function ELI5Question() {
 
     setLoading(true);
     try {
-      // Use environment variable for API URL, fallback to localhost for development
-      const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-      const res = await fetch(`${apiUrl}/api/ask`, {
+      // In Vercel, the API is served on the same domain under /api, so we use a relative path
+      const res = await fetch(`/api/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
