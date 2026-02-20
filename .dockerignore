@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output (will be built inside container)
+dist/
+
+# Environment files (secrets should not be in image)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (no need to copy into build context)
+docker-compose.yml
+docker-compose*.yml
+Dockerfile
+*.dockerignore
+
+# Backend (handled by its own Dockerfile)
+backend/
+
+# Misc
+*.md
+LICENSE
+render.yaml
+vercel.json
+bun.lockb
