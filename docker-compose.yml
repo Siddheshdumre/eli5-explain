@@ -1,0 +1,74 @@
+# ============================================
+# Docker Compose — ELI5 Universe Builder
+# Production deployment with 2 containers
+# ============================================
+# Usage:
+#   docker compose up -d              # Start in background
+#   docker compose up -d --build      # Rebuild & start
+#   docker compose down               # Stop & remove containers
+#   docker compose logs -f            # Follow logs
+#   docker compose logs -f backend    # Follow backend logs only
+#   docker compose ps                 # Check status
+# ============================================
+
+services:
+  # ----------------------------------------
+  # Backend: FastAPI + Gunicorn
+  # ----------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eli5-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override or add additional env vars here
+      - GUNICORN_WORKERS=2
+      - FRONTEND_URL=http://frontend:80
+    networks:
+      - eli5-network
+    # Backend is NOT exposed to the host — only accessible via Nginx reverse proxy
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  # ----------------------------------------
+  # Frontend: Nginx serving React + reverse proxy
+  # ----------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Empty = relative URL, Nginx proxies /api/* to backend
+        VITE_API_URL: ""
+    container_name: eli5-frontend
+    restart: unless-stopped
+    ports:
+      # Map host port 80 to container port 8080 (non-root can't bind to 80)
+      - "80:8080"
+    networks:
+      - eli5-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+# ----------------------------------------
+# Shared network for inter-container communication
+# ----------------------------------------
+networks:
+  eli5-network:
+    driver: bridge
