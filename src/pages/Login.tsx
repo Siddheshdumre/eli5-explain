@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Brain, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,15 +20,28 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Login successful!",
         description: "Welcome back to ELI5.AI",
       });
       navigate('/app');
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -84,14 +98,14 @@ const Login = () => {
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
                 disabled={isLoading}
               >
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
-              
+
               <p className="text-center text-sm text-gray-400">
                 Don't have an account?{" "}
                 <Link to="/signup" className="text-blue-400 hover:text-blue-300 hover:underline font-medium">

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Brain, ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -40,15 +41,33 @@ const Signup = () => {
 
     setIsLoading(true);
 
-    // Simulate signup process
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+          }
+        }
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Account created successfully!",
         description: "Welcome to ELI5.AI! You can now start learning.",
       });
       navigate('/app');
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "Something went wrong.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const benefits = [
@@ -71,7 +90,7 @@ const Signup = () => {
               Start your journey to better understanding with our AI-powered explanations.
             </p>
           </div>
-          
+
           <div className="space-y-4">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center gap-3">
@@ -164,14 +183,14 @@ const Signup = () => {
               </CardContent>
 
               <CardFooter className="flex flex-col space-y-4">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
-                
+
                 <p className="text-center text-sm text-gray-400">
                   Already have an account?{" "}
                   <Link to="/login" className="text-blue-400 hover:text-blue-300 hover:underline font-medium">
