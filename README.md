@@ -1,109 +1,90 @@
-# ELI5 - Explain Like I'm Five
+# ELI5 Universe Builder 🌌
 
-An AI-powered application that explains complex topics in simple terms, using the Llama 3 model via the Groq API. The application provides explanations at different difficulty levels (Child, Teen, Adult) and in various formats (Standard, Story, Technical).
+An advanced, AI-powered conversational platform that explains complex topics effortlessly. Powered by the incredibly fast Llama 3 model (via Groq API), this application acts as a stateful, agentic tutor capable of adapting to different audiences, searching the web in real-time, and aggressively verifying learning through generated quizzes.
 
-## Features
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-- 🤖 Powered by Llama 3 (Groq API)
-- 📚 Wikipedia integration for context-aware explanations
-- 🎯 Multiple difficulty levels:
-  - ELI5 (Child) - Simple explanations for young children
-  - Teen - More detailed explanations for teenagers
-  - Adult - Comprehensive explanations for adults
-- 📝 Multiple explanation formats:
-  - Standard - Clear and concise explanations
-  - Story - Narrative-style explanations
-  - Technical - Detailed technical explanations
-- 🎨 Modern UI built with React, TypeScript, and Shadcn UI
-- ⚡ Fast backend using FastAPI
+## ✨ Core Features
 
-## Tech Stack
+*   🧠 **Adaptive Persona Contexts:** Tailor responses dynamically across multiple difficulties (ELI5 Child, Intermediate Teen, Expert Adult), ensuring maximum relatability and appropriate vocabulary without cheesy filler.
+*   💬 **Persistent Chat History:** Sign in, start a thread, and pick it up later. Built on a fully normalized Supabase PostgreSQL database, your conversation threads and messages are securely persisted and loaded into the sleek sidebar interface.
+*   🎯 **Socrates Mode (Active Learning):** Toggle this mode to instantly generate bespoke 3-question multiple-choice quizzes automatically derived from the AI's explanation. Incorrect answers trigger an immediate, Socratic micro-explanation explaining exactly *why* the thought process was flawed. 
+*   🌐 **Agentic Web Search:** Ask questions requiring up-to-date knowledge. Powered by LangGraph and Tavily, the underlying AI operates as a ReAct agent to independently research, synthesize, and answer questions using standard Google search protocols.
+*   🔒 **Secure Authentication:** Integrated JWT-based authentication using Supabase Auth. Users must log in, ensuring their history and profile context is siloed securely using Row Level Security (RLS).
+*   🎭 **Flexible Output Formatting:** Request answers as simple summaries, storytelling narratives, or dense technical breakdowns using markdown and structured responses.
 
-### Frontend
-- React
-- TypeScript
-- Vite
-- Shadcn UI
-- Tailwind CSS
+## 🛠 Tech Stack
 
-### Backend
-- FastAPI
-- Python
-- Groq API (Llama 3)
-- Wikipedia API
+### Frontend Architecture
+*   **React 18 + TypeScript:** Strongly-typed component architecture.
+*   **Vite:** Extremely fast frontend tooling.
+*   **Shadcn UI & Tailwind CSS:** Beautiful, accessible, zero-runtime-cost styling system leveraging Radix UI primitives.
+*   **React Router:** For deep-linking into specific chat threads and secure route handling.
+*   **Supabase JS:** Seamless authentication and real-time database querying.
 
-## Setup
-
-### 🚀 Docker Deployment (Recommended)
-
-You can run the entire application (frontend and backend) using Docker. This is the easiest way to get started and ensures all dependencies are handled automatically.
-
-#### 1. Build and start the containers
-```bash
-docker compose up --build
-```
-
-#### 2. Access the app
-- Frontend: http://localhost:8081/app
-- Backend API: http://localhost:8000
-
-#### 3. Environment Variables
-Copy `env.example` to `.env` and fill in your Groq API key and other settings as needed before starting Docker.
+### Backend Architecture
+*   **FastAPI (Python):** Blazing fast, asynchronous HTTP server handling streaming responses dynamically.
+*   **Groq API (Llama 3):** Providing ultra-fast inference to give the LLM near-zero latency.
+*   **LangGraph & LangChain:** Orchestrating the "Agentic Web Search" workflows and structured output generation.
+*   **Supabase (PostgreSQL):** Managing users, threads, messages, and RLS policies.
+*   **Wikipedia & Tavily Search API:** Fetching live unstructured text context for grounded RAG (Retrieval-Augmented Generation).
 
 ---
 
+## 🚀 Getting Started
+
 ### Prerequisites
-- Node.js (v16 or higher)
-- Python 3.8 or higher
-- Groq API key
+*   Node.js (v18 or higher)
+*   Python 3.10 or higher
+*   A [Groq](https://console.groq.com/) API Key
+*   A [Supabase](https://supabase.com/) Project (URL & Anon Key)
+*   A [Tavily](https://tavily.com/) API Key for optional Agentic Search.
+
+### Backend Setup
+1. Open a new terminal and navigate to the backend (`backend/` or `api/` for remote serverless deployment):
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
+   pip install -r requirements.txt
+   ```
+2. Set up your environment variables locally in `backend/.env` exactly like:
+   ```env
+   GROQ_API_KEY=your_groq_key
+   TAVILY_API_KEY=your_tavily_key
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_anon_key
+   ```
+3. Run the development server cleanly:
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
 
 ### Frontend Setup
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/eli5-explain.git
-cd eli5-explain
-```
+1. In a new terminal, navigate to the root directory and install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create a `.env` in the root explicitly mapping the Supabase credentials for the client:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
+3. Start the Vite dev server:
+   ```bash
+   npm run dev
+   ```
+4. Access the gorgeous UI at [http://localhost:5173](http://localhost:5173) (or whichever port Vite allocates)!
 
-2. Install dependencies
-```bash
-npm install
-```
+## 🔮 Usage Journey
+1. Navigate to the web app, click **SignUp** (to create an account via Supabase auth), and then **Login**.
+2. Start a fresh thread in the chat interface. You can adjust the **Difficulty** and the **Source Option**. Try changing "Basic Wikipedia" to "Agentic Web Search" and ask a question about today's news!
+3. Toggle the **Socrates Quiz** switch, ask a complex explanation, and test your knowledge interactively below the chat bubble.
+4. Close the browser, bring it back up later, log in, and click your previous chat thread on the left-side Sidebar to resume right where you left off.
 
-3. Start the development server
-```bash
-npm run dev
-```
-
-
-### Backend Setup (Manual, for development only)
-If you prefer not to use Docker, you can run the backend manually:
-1. Navigate to the backend directory
-2. Create and activate a virtual environment
-3. Install dependencies with `pip install -r requirements.txt`
-4. Create a `.env` file with your Groq API key and settings
-5. Start the backend server with `uvicorn main:app --reload --port 8000`
-
-> **Note:** For most users, Docker is the recommended approach.
-
-## Usage
-
-1. Open http://localhost:8081/app in your browser
-2. Enter your question in the text box
-3. Select your preferred difficulty level
-4. Choose your preferred format
-5. Click "Ask Question" to get your explanation
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
+## 📝 License
 > ⚠️ This is a **proprietary project** by Siddhesh Dumre.
 > All rights reserved. No part of this code may be used, copied, or modified without explicit permission.
-
-## Acknowledgments
-
-- [Groq](https://console.groq.com/) for providing the Llama 3 API
-- [Wikipedia](https://www.wikipedia.org/) for content context
-- [Shadcn UI](https://ui.shadcn.com/) for the beautiful UI components

@@ -10,6 +10,7 @@ import Signup from "./pages/Signup";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 import { ELI5Question } from "./components/ELI5Question";
 
 const queryClient = new QueryClient();
@@ -23,10 +24,12 @@ const AppRouter = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<App />} />
+          <Route path="/app/:threadId" element={<App />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

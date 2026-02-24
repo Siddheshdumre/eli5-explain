@@ -7,7 +7,7 @@ import wikipedia
 import os
 import requests
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
 import json
 
 load_dotenv()
@@ -38,6 +38,8 @@ class QuestionRequest(BaseModel):
     difficulty: str
     format_option: str
     use_wikipedia: bool = True
+    context_source: str = "wikipedia"
+    thread_id: Optional[str] = None
 
 class QuestionResponse(BaseModel):
     answer: str
@@ -50,17 +52,20 @@ def get_wikipedia_summary(query: str) -> str:
         print(f"Wikipedia error: {e}")
         return "Could not fetch Wikipedia summary."
 
-def build_messages(question: str, context: str, level: str, style: str) -> list:
+def build_messages(question: str, context: str, level: str, style: str, previous_messages: list = None) -> list:
+    if previous_messages is None:
+        previous_messages = []
+        
     # 1. Persona & Tone Engineering
     styles = {
-        "ELI5 (Child)": "You are a warm, imaginative teacher talking to a 5-year-old child. Your goal is to make the child say 'Wow, I get it!' Use simple words, tangible real-world analogies (like toys, cars, or food), and keep sentences short. Never use jargon or complex academic phrasing. Be encouraging.",
-        "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. You can introduce key terms, but you must define them immediately. Keep the tone conversational, interesting, and relatable.",
+        "ELI5 (Child)": "You are a warm, imaginative teacher talking to a 5-year-old child. Use simple words and keep sentences short. NEVER use jargon. You MUST build your entire explanation around one single, cohesive, real-world analogy (like a playground, a sandbox, or a toy box).",
+        "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. Define key terms immediately. You MUST base your explanation around a relatable real-world analogy (like a city, the internet, or a school).",
         "Expert": "You are a university professor or senior industry expert talking to a peer. Prioritize absolute accuracy, technical precision, and depth. Do not shy away from domain-specific jargon, advanced theories, or historical context. Structure your answer logically."
     }
     
     # 2. Structural & Formatting Engineering
     formats = {
-        "Standard": "Provide a clear, cohesive explanation in well-structured paragraphs. Use bolding for key concepts.",
+        "Standard": "Provide a clear, cohesive explanation. Use bolding for key concepts.",
         "Storytelling": "Frame your entire explanation as a captivating narrative or a vivid story with characters or a clear plot to illustrate the concept.",
         "Technical Breakdown": "Structure your response entirely using clear headings, bullet points, and numbered lists. Focus heavily on the 'how' and 'why' mechanics."
     }
@@ -70,11 +75,13 @@ def build_messages(question: str, context: str, level: str, style: str) -> list:
         f"{styles.get(level, styles['Intermediate'])}\n\n"
         f"FORMATTING INSTRUCTION: {formats.get(style, formats['Standard'])}\n\n"
         f"CRITICAL RULES:\n"
-        f"- Get straight to the point. Do not start with filler phrases like 'Here is an explanation' or 'Sure!'\n"
-        f"- Ensure your tone exactly matches the target audience.\n"
-        f"- When explaining a process, timeline, architecture, or relationship, you MUST include a visual diagram.\n"
-        f"- Use Mermaid.js syntax for diagrams. Wrap the diagram code exactly in ```mermaid  ``` markdown blocks.\n"
+        f"1. NEVER start by announcing what you are going to do (e.g., 'Here is an explanation of...', 'Sure!'). Just instantly start the explanation.\n"
+        f"2. NEVER end with cheesy concluding questions, cliches, or phrases like 'Isn't that amazing?', 'Wow!', or 'Hope that helps!'. End your explanation naturally and abruptly.\n"
+        f"3. Structure your response in three parts: A simple 1-sentence hook, the core explanation/analogy, and a 1-sentence practical takeaway."
     )
+
+    messages = [{"role": "system", "content": system_msg}]
+    messages.extend(previous_messages)
 
     # 4. Assemble the User Prompt with Context
     user_msg = f"Please explain: {question}"
@@ -85,17 +92,18 @@ def build_messages(question: str, context: str, level: str, style: str) -> list:
             f"Based on the context above (and your own knowledge to fill gaps), please explain: {question}"
         )
 
-    return [
-        {"role": "system", "content": system_msg},
-        {"role": "user", "content": user_msg}
-    ]
+    messages.append({"role": "user", "content": user_msg})
+    return messages
 
 import json
 
-def groq_generate_stream(messages: list, wiki_summary: Optional[str]):
+def groq_generate_stream(messages: list, wiki_summary: Optional[str], thread_id: str, auth_token: str):
     if not GROQ_API_KEY:
         yield f"data: {json.dumps({'type': 'error', 'content': 'GROQ_API_KEY not set.'})}\n\n"
         return
+        
+    # Yield thread ID first so frontend can update its state
+    yield f"data: {json.dumps({'type': 'thread_id', 'content': thread_id})}\n\n"
         
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -113,6 +121,7 @@ def groq_generate_stream(messages: list, wiki_summary: Optional[str]):
     if wiki_summary:
         yield f"data: {json.dumps({'type': 'context', 'content': wiki_summary})}\n\n"
         
+    full_response = ""
     try:
         response = requests.post(GROQ_API_URL, headers=headers, json=payload, stream=True, timeout=50)
         response.raise_for_status()
@@ -124,12 +133,26 @@ def groq_generate_stream(messages: list, wiki_summary: Optional[str]):
                 if line_str.startswith("data: ") and line_str != "data: [DONE]":
                     try:
                         data = json.loads(line_str[6:])
-                        token = data["choices"][0].get("delta", {}).get("content", "")
-                        if token:
+                        token_str = data["choices"][0].get("delta", {}).get("content", "")
+                        if token_str:
+                            full_response += token_str
                             # 3. Yield each new word/token to the frontend
-                            yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
+                            yield f"data: {json.dumps({'type': 'chunk', 'content': token_str})}\n\n"
                     except Exception:
                         pass
+        
+        # 4. Save the assistant's final message to the database
+        if full_response and thread_id and auth_token and auth_token not in ["null", "undefined"]:
+            try:
+                user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {auth_token}"}))
+                user_client.table("chat_messages").insert({
+                    "thread_id": thread_id,
+                    "role": "assistant",
+                    "content": full_response
+                }).execute()
+            except Exception as e:
+                print(f"Error saving assistant message: {e}")
+
         yield "data: [DONE]\n\n"
         
     except requests.exceptions.HTTPError as e:
@@ -151,12 +174,43 @@ async def ask_question(request: QuestionRequest, req: Request):
     
     token = auth_header.split(" ")[1]
     
+    user_id = None
+    if token and token not in ["null", "undefined"]:
+        try:
+            user_response = supabase_client.auth.get_user(token)
+            if user_response.user:
+                user_id = user_response.user.id
+        except Exception as e:
+            pass # allow anonymous
+
+    thread_id = request.thread_id
+    previous_messages = []
+    
     try:
-        user_response = supabase_client.auth.get_user(token)
-        if not user_response.user:
-            raise HTTPException(status_code=401, detail="Invalid session token")
+        if user_id:
+            user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+            if not thread_id:
+                # Create a new thread
+                title = request.question[:50] + "..." if len(request.question) > 50 else request.question
+                thread_res = user_client.table("chat_threads").insert({"user_id": user_id, "title": title}).execute()
+                thread_id = thread_res.data[0]['id']
+            else:
+                # Fetch past messages to load history
+                msg_res = user_client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+                for msg in msg_res.data:
+                    previous_messages.append({"role": msg["role"], "content": msg["content"]})
+                    
+            # Save the current user question to the database
+            user_client.table("chat_messages").insert({
+                "thread_id": thread_id,
+                "role": "user",
+                "content": request.question
+            }).execute()
+        else:
+            thread_id = "" # Force empty thread for anonymous users
+            
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        print(f"Error handling database chat logs: {e}")
 
     # 2. Proceed with Generation
     wiki_summary = ""
@@ -167,14 +221,41 @@ async def ask_question(request: QuestionRequest, req: Request):
         request.question,
         wiki_summary,
         request.difficulty,
-        request.format_option
+        request.format_option,
+        previous_messages
     )
     
     # 4. Return the open stream to the client
     return StreamingResponse(
-        groq_generate_stream(messages, wiki_summary if request.use_wikipedia else None),
+        groq_generate_stream(messages, wiki_summary if request.use_wikipedia else None, thread_id, token),
         media_type="text/event-stream"
     )
+
+@app.get("/api/threads")
+async def get_threads(req: Request):
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = auth_header.split(" ")[1]
+    try:
+        user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        res = user_client.table("chat_threads").select("*").order("created_at", desc=True).execute()
+        return {"threads": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/threads/{thread_id}/messages")
+async def get_thread_messages(thread_id: str, req: Request):
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = auth_header.split(" ")[1]
+    try:
+        user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        res = user_client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+        return {"messages": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
 async def health_check():

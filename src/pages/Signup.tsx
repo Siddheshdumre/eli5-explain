@@ -99,13 +99,6 @@ const Signup = () => {
               </div>
             ))}
           </div>
-
-          <div className="bg-gradient-to-r from-gray-800/50 to-slate-800/50 p-6 rounded-xl border border-gray-700">
-            <p className="text-sm text-gray-300 italic">
-              "ELI5.AI helped me understand complex topics in minutes that used to take hours to research!"
-            </p>
-            <p className="text-sm font-medium text-white mt-2">- Sarah K., Student</p>
-          </div>
         </div>
 
         {/* Right side - Signup form */}

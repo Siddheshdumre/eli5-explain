@@ -1,64 +1,32 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, BookOpen, Users, Zap, Sparkles, ArrowRight, CheckCircle } from "lucide-react";
+import { Orbit, Database, Cpu, BrainCircuit, MessageSquare, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Landing = () => {
-  const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Explanations",
-      description: "Get complex topics explained using advanced AI technology"
-    },
-    {
-      icon: Users,
-      title: "Multiple Difficulty Levels",
-      description: "From ELI5 to expert level - choose what works for you"
-    },
-    {
-      icon: Zap,
-      title: "Voice Interaction",
-      description: "Ask questions with your voice and listen to answers"
-    },
-    {
-      icon: BookOpen,
-      title: "Wikipedia Integration",
-      description: "Enhanced with real-time Wikipedia context"
-    }
-  ];
-
-  const benefits = [
-    "Personalized learning experience",
-    "Multiple explanation formats",
-    "Voice-enabled interaction",
-    "Instant Wikipedia context",
-    "Expert to beginner explanations",
-    "Interactive and engaging"
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-cyan-500/30">
+      {/* Background Grid Effect */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: 'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <nav className="fixed w-full border-b border-white/5 bg-[#050505]/80 backdrop-blur-md z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <Brain className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ELI5
-              </span>
+            <div className="flex items-center gap-3">
+              <Orbit className="h-6 w-6 text-cyan-400" />
+              <span className="text-xl font-bold tracking-widest text-white">ELI5</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link to="/app">
-                <Button variant="ghost">Try App</Button>
-              </Link>
               <Link to="/login">
-                <Button variant="outline">Login</Button>
+                <Button variant="ghost" className="text-slate-400 hover:text-white text-sm tracking-wide">
+                  Log in
+                </Button>
               </Link>
-              <Link to="/signup">
-                <Button>Get Started</Button>
+              <Link to="/app">
+                <Button className="bg-cyan-500 hover:bg-cyan-400 text-black text-sm font-semibold tracking-wide rounded">
+                  Try for Free
+                </Button>
               </Link>
             </div>
           </div>
@@ -66,131 +34,121 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-32">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="relative">
-                <Brain className="h-20 w-20 text-blue-600" />
-                <div className="absolute -top-2 -right-2">
-                  <Sparkles className="h-8 w-8 text-yellow-500" />
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden min-h-[90vh] flex items-center">
+        {/* Subtle glow */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+
+            {/* Left Copy */}
+            <div className="text-left w-full max-w-xl mx-auto lg:mx-0">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 text-xs font-medium tracking-wide mb-8">
+                <Zap className="h-3 w-3" /> AI-Powered Learning
+              </div>
+
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight leading-[1.1]">
+                Explain Anything
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-500">
+                  Simply & Clearly.
+                </span>
+              </h1>
+
+              <p className="text-lg text-slate-400 mb-10 font-light leading-relaxed">
+                Break down the most complex topics into easy-to-understand analogies. Choose your difficulty, ask a question, and learn instantly with state-of-the-art AI.
+              </p>
+
+              <div className="flex items-center gap-4">
+                <Link to="/app">
+                  <Button size="lg" className="h-12 px-8 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold tracking-wide rounded border-none shadow-[0_0_15px_rgba(0,245,255,0.15)] transition-all hover:shadow-[0_0_25px_rgba(0,245,255,0.3)]">
+                    Try for Free
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Side UI Mockup */}
+            <div className="w-full max-w-lg mx-auto lg:max-w-none relative mt-12 lg:mt-0">
+              <div className="absolute -inset-1 bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-50"></div>
+
+              <div className="relative bg-[#0a0a0c] border border-slate-800 rounded-xl shadow-2xl overflow-hidden text-left flex flex-col h-[400px]">
+                {/* Mockup Window Header */}
+                <div className="flex items-center px-4 py-3 border-b border-slate-800 bg-[#0f0f12]">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                  </div>
+                  <div className="flex-1"></div>
+                </div>
+
+                {/* Mockup Window Content */}
+                <div className="p-6 space-y-6 flex-1 overflow-hidden relative">
+                  <div className="flex justify-end">
+                    <div className="bg-cyan-950/30 border border-cyan-900/50 text-cyan-100 px-4 py-3 rounded-lg max-w-[85%] text-sm shadow-sm">
+                      How exactly do black holes work?
+                    </div>
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="bg-[#111113] border border-slate-800 text-slate-300 px-5 py-4 rounded-lg max-w-[90%] text-sm leading-relaxed shadow-sm">
+                      <span className="text-cyan-400 font-medium mb-2 flex items-center gap-2"><Orbit className="w-3.5 h-3.5" /> ELI5 Active</span>
+                      Imagine space is a giant trampoline. If you place a heavy bowling ball in the middle, it sinks down and creates a massive dip. Now imagine placing a ball so incredibly heavy that it tears a hole right through the fabric...
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <h1 className="text-6xl md:text-7xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                Explain Anything
-              </span>
-              <br />
-              <span className="text-gray-800">Simply & Clearly</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Transform complex topics into clear, engaging explanations tailored to your learning level. 
-              From beginner to expert - we've got you covered.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link to="/signup">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  Start Learning Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/app">
-                <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                  Try Demo
-                </Button>
-              </Link>
-            </div>
-            
-            {/* Quick Stats */}
-            <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Free to try</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>No credit card required</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Instant results</span>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white/50">
+      {/* Narrative Feature Layout (Alternating full width) */}
+      <section className="py-24 border-y border-slate-800 bg-[#080808]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose ELI5?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Experience the future of learning with our AI-powered explanation platform
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur-sm">
-                <CardHeader className="text-center">
-                  <div className="mx-auto w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-gray-600">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="w-full h-[400px] border border-slate-800 bg-[#0a0a0a] rounded-lg relative overflow-hidden flex items-center justify-center shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-900/10 to-transparent"></div>
+                <Cpu className="h-24 w-24 text-slate-700 mx-auto" strokeWidth={1} />
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
+              <div className="inline-flex items-center justify-center p-2 bg-cyan-500/10 rounded-md mb-6">
+                <MessageSquare className="h-5 w-5 text-cyan-400" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-4">Adjustable Difficulty Levels</h2>
+              <p className="text-slate-400 text-lg leading-relaxed mb-6">
+                Not everyone learns the same way. Switch instantly between simplified child-like analogies, intermediate teenage summaries, or full expert deep-dives. The AI adapts its vocabulary to your exact needs in real-time.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20">
+      {/* Narrative Feature 2 */}
+      <section className="py-24 bg-[#050505]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Everything You Need to Learn Better
-              </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                Our platform combines cutting-edge AI with intuitive design to make learning 
-                complex topics easier than ever before.
-              </p>
-              <div className="grid gap-4">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{benefit}</span>
-                  </div>
-                ))}
+              <div className="inline-flex items-center justify-center p-2 bg-blue-500/10 rounded-md mb-6">
+                <BrainCircuit className="h-5 w-5 text-blue-400" />
               </div>
+              <h2 className="text-3xl font-bold text-white mb-4">Interactive Socrates Quizzes</h2>
+              <p className="text-slate-400 text-lg leading-relaxed mb-6">
+                Don't just read—prove you understand. Toggle standard explanations into interactive learning quizzes. If you get an answer wrong, the system politely tutors you on exactly where your logic broke down.
+              </p>
             </div>
-            <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl p-8">
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <Brain className="h-8 w-8 text-blue-600" />
-                  <span className="font-semibold text-gray-900">ELI5.AI Demo</span>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <strong>Question:</strong> "How does the internet work?"
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <strong>ELI5 Answer:</strong> "Imagine the internet like a giant mail system..."
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Difficulty: Beginner</span>
-                    <span>Format: Storytelling</span>
+            <div>
+              <div className="w-full h-[400px] border border-slate-800 bg-[#0a0a0a] rounded-lg relative overflow-hidden flex flex-col justify-center p-8 shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-transparent"></div>
+                <div className="bg-[#111113] border border-slate-800 rounded p-4 mb-4 relative z-10 w-full max-w-sm mx-auto shadow-xl">
+                  <p className="text-slate-200 font-medium mb-4">Which of the following best describes gravity?</p>
+                  <div className="space-y-3">
+                    <div className="w-full bg-[#1a1a20] border border-slate-700/50 rounded p-3 text-sm text-slate-400 flex items-center gap-2"><div className="w-3 h-3 rounded-full border border-slate-600"></div>A pulling force caused by magnets</div>
+                    <div className="w-full bg-[#1f1a1a] border-l-2 border-l-red-500 border-slate-700/50 rounded p-3 text-sm text-red-300 flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500"></div>Energy waves</div>
+                    <div className="w-full bg-cyan-950/40 border-l-2 border-l-cyan-500 rounded p-3 text-sm text-cyan-50 flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-cyan-500"></div>Space curving by heavy objects</div>
                   </div>
                 </div>
               </div>
@@ -199,25 +157,42 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      {/* Narrative Feature 3 */}
+      <section className="py-24 border-y border-slate-800 bg-[#080808]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="w-full h-[400px] border border-slate-800 bg-[#0a0a0a] rounded-lg relative overflow-hidden flex items-center justify-center shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-900/10 to-transparent"></div>
+                <Database className="h-24 w-24 text-slate-700 mx-auto" strokeWidth={1} />
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
+              <div className="inline-flex items-center justify-center p-2 bg-cyan-500/10 rounded-md mb-6">
+                <Database className="h-5 w-5 text-cyan-400" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-4">Grounded in Reality</h2>
+              <p className="text-slate-400 text-lg leading-relaxed mb-6">
+                Connected directly to Wikipedia and live search agents. ELI5 pulls hard factual context before answering, ensuring its explanations are always rooted in accurate, real-world data instead of AI hallucinations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Bottom */}
+      <section className="py-32 relative text-center">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Start Learning?
+            Start Learning Faster Today
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of learners who are already using ELI5.AI to understand complex topics.
+          <p className="text-slate-400 mb-10 text-lg">
+            Join thousands of learners and decode the universe's most complex topics instantly.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+          <div className="flex justify-center">
             <Link to="/app">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-purple-600">
-                Try Demo First
+              <Button size="lg" className="h-12 px-8 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold tracking-wide rounded border-none">
+                Try for Free
               </Button>
             </Link>
           </div>
@@ -225,29 +200,12 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Brain className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold">ELI5.AI</span>
-            </div>
-            <p className="text-gray-400 mb-6">
-              Making complex topics simple, one explanation at a time.
-            </p>
-            <p>&copy; 2025 All Rights Reserved </p>
-            <p className="text-gray-400 mb-6">
-              By Siddhesh D
-            </p>
-
-
-            <div className="flex justify-center gap-8 text-sm text-gray-400">
-              <Link to="/about" className="hover:text-white transition-colors">About</Link>
-              <Link to="/features" className="hover:text-white transition-colors">Features</Link>
-              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-              <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
-            </div>
+      <footer className="border-t border-slate-900 bg-[#020202] py-8">
+        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-slate-600">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="font-bold tracking-widest text-slate-500">ELI5.AI</span>
           </div>
+          <p className="mb-2">&copy; 2025 ELI5 Universe Builder. All Rights Reserved.</p>
         </div>
       </footer>
     </div>

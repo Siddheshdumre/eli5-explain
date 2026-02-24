@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 import wikipedia
 import os
 import requests
@@ -45,6 +45,43 @@ class QuestionRequest(BaseModel):
     format_option: str
     context_source: str = "wikipedia" # 'wikipedia' or 'advanced_web_search'
 
+class QuizRequest(BaseModel):
+    answer_text: str
+    difficulty: str
+
+class QuizCorrectionRequest(BaseModel):
+    question: str
+    user_answer: str
+    correct_answer: str
+    original_context: str
+    difficulty: str
+
+class QuizQuestion(BaseModel):
+    question: str = Field(description="The multiple choice question based on the text")
+    options: List[str] = Field(description="Exactly 4 realistic multiple choice options")
+    correct_answer: str = Field(description="The exact text of the correct option")
+    
+class Quiz(BaseModel):
+    questions: List[QuizQuestion] = Field(description="Exactly 3 quiz questions")
+
+def verify_auth(req: Request):
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    
+    token = auth_header.split(" ")[1]
+    
+    if token in ["null", "undefined"]:
+        return None
+        
+    try:
+        user_response = supabase_client.auth.get_user(token)
+        if not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid session token")
+        return user_response.user
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
 def get_wikipedia_summary(query: str) -> str:
     try:
         return wikipedia.summary(query, sentences=5)
@@ -55,14 +92,14 @@ def get_wikipedia_summary(query: str) -> str:
 def get_system_message(level: str, style: str) -> str:
     # 1. Persona & Tone Engineering
     styles = {
-        "ELI5 (Child)": "You are a warm, imaginative teacher talking to a 5-year-old child. Your goal is to make the child say 'Wow, I get it!' Use simple words, tangible real-world analogies (like toys, cars, or food), and keep sentences short. Never use jargon or complex academic phrasing. Be encouraging.",
-        "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. You can introduce key terms, but you must define them immediately. Keep the tone conversational, interesting, and relatable.",
+        "ELI5 (Child)": "You are a warm, imaginative teacher talking to a 5-year-old child. Use simple words and keep sentences short. NEVER use jargon. You MUST build your entire explanation around one single, cohesive, real-world analogy (like a playground, a sandbox, or a toy box).",
+        "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. Define key terms immediately. You MUST base your explanation around a relatable real-world analogy (like a city, the internet, or a school).",
         "Expert": "You are a university professor or senior industry expert talking to a peer. Prioritize absolute accuracy, technical precision, and depth. Do not shy away from domain-specific jargon, advanced theories, or historical context. Structure your answer logically."
     }
     
     # 2. Structural & Formatting Engineering
     formats = {
-        "Standard": "Provide a clear, cohesive explanation in well-structured paragraphs. Use bolding for key concepts.",
+        "Standard": "Provide a clear, cohesive explanation. Use bolding for key concepts.",
         "Storytelling": "Frame your entire explanation as a captivating narrative or a vivid story with characters or a clear plot to illustrate the concept.",
         "Technical Breakdown": "Structure your response entirely using clear headings, bullet points, and numbered lists. Focus heavily on the 'how' and 'why' mechanics."
     }
@@ -72,11 +109,11 @@ def get_system_message(level: str, style: str) -> str:
         f"{styles.get(level, styles['Intermediate'])}\n\n"
         f"FORMATTING INSTRUCTION: {formats.get(style, formats['Standard'])}\n\n"
         f"CRITICAL RULES:\n"
-        f"- Get straight to the point. Do not start with filler phrases like 'Here is an explanation' or 'Sure!'\n"
-        f"- Ensure your tone exactly matches the target audience.\n"
-        f"- When explaining a process, timeline, architecture, or relationship, you MUST include a visual diagram.\n"
-        f"- Use Mermaid.js syntax for diagrams. Wrap the diagram code exactly in ```mermaid  ``` markdown blocks.\n"
+        f"1. NEVER start by announcing what you are going to do (e.g., 'Here is an explanation of...', 'Sure!'). Just instantly start the explanation.\n"
+        f"2. NEVER end with cheesy concluding questions, cliches, or phrases like 'Isn't that amazing?', 'Wow!', or 'Hope that helps!'. End your explanation naturally and abruptly.\n"
+        f"3. Structure your response in three parts: A simple 1-sentence hook, the core explanation/analogy, and a 1-sentence practical takeaway."
     )
+    
     return system_msg
 
 async def langgraph_generate_stream(question: str, level: str, style: str, context_source: str):
@@ -157,23 +194,60 @@ async def langgraph_generate_stream(question: str, level: str, style: str, conte
 
 @app.post("/api/ask")
 async def ask_question(request: QuestionRequest, req: Request):
-    # 1. Verify the Supabase JWT token
-    auth_header = req.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    
-    token = auth_header.split(" ")[1]
-    
-    try:
-        user_response = supabase_client.auth.get_user(token)
-        if not user_response.user:
-            raise HTTPException(status_code=401, detail="Invalid session token")
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
-
-    # 4. Return the open stream to the client
+    verify_auth(req)
     return StreamingResponse(
         langgraph_generate_stream(request.question, request.difficulty, request.format_option, request.context_source),
+        media_type="text/event-stream"
+    )
+
+@app.post("/api/generate_quiz")
+async def generate_quiz(request: QuizRequest, req: Request):
+    verify_auth(req)
+    
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not set.")
+        
+    llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.2)
+    structured_llm = llm.with_structured_output(Quiz)
+    
+    prompt = f"Given the following text explained at a {request.difficulty} level, generate exactly 3 multiple-choice questions to test the reader's understanding. Ensure there are 4 options per question, and one clearly correct answer.\n\nTEXT:\n{request.answer_text}"
+    
+    try:
+        result = await structured_llm.ainvoke(prompt)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM Quiz Generation error: {str(e)}")
+
+async def explain_quiz_correction_stream(request: QuizCorrectionRequest):
+    if not GROQ_API_KEY:
+        yield f"data: {json.dumps({'type': 'error', 'content': 'GROQ_API_KEY not set.'})}\n\n"
+        return
+        
+    llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.5)
+    
+    prompt = f"""You are a helpful and encouraging tutor. 
+The user was asked this question: "{request.question}"
+They incorrectly answered: "{request.user_answer}"
+The correct answer is: "{request.correct_answer}"
+
+Here is the original context they read:
+"{request.original_context}"
+
+In 2-3 sentences max, explain WHY their answer was wrong and why the correct answer is right, using a {request.difficulty} tone. Be very encouraging."""
+
+    try:
+        async for chunk in llm.astream(prompt):
+            if chunk.content:
+                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk.content})}\n\n"
+        yield "data: [DONE]\n\n"
+    except Exception as e:
+         yield f"data: {json.dumps({'type': 'error', 'content': f'LLM error: {str(e)}'})}\n\n"
+
+@app.post("/api/explain_quiz_answer")
+async def explain_quiz_answer(request: QuizCorrectionRequest, req: Request):
+    verify_auth(req)
+    return StreamingResponse(
+        explain_quiz_correction_stream(request),
         media_type="text/event-stream"
     )
 
