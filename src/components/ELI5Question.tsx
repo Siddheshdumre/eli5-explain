@@ -11,6 +11,7 @@ import { useToast } from "./ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
+import { ShareSnapshot } from "./ShareSnapshot";
 
 export interface ChatMessage {
   id: string;
@@ -284,9 +285,18 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
           <div key={m.id || idx} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border shadow-sm rounded-bl-sm'}`}>
               {m.role === 'assistant' && (
-                <div className="flex items-center gap-2 mb-2 text-primary font-medium text-sm">
-                  <Cpu className="h-4 w-4" />
-                  Socrates
+                <div className="flex items-center justify-between mb-2 text-primary font-medium text-sm">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="h-4 w-4" />
+                    Socrates
+                  </div>
+                  {m.content && (
+                    <ShareSnapshot
+                      explanation={m.content}
+                      question={messages[idx - 1]?.content || "ELI5 Explanation"}
+                      difficulty={difficulty}
+                    />
+                  )}
                 </div>
               )}
               <div className={`prose prose-sm max-w-none ${m.role === 'user' ? 'prose-invert' : ''}`}>
