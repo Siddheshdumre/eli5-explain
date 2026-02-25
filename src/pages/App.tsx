@@ -8,6 +8,7 @@ import { LogOut, User } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { InstallPWA } from "@/components/InstallPWA";
 
 export default function AppPage() {
   const [session, setSession] = useState<any>(null);
@@ -55,6 +56,7 @@ export default function AppPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <InstallPWA />
             {session ? (
               <>
                 <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-foreground hidden md:flex">

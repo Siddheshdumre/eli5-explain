@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Orbit, Database, Cpu, BrainCircuit, MessageSquare, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { InstallPWA } from "@/components/InstallPWA";
 
 const Landing = () => {
   return (
@@ -18,6 +19,7 @@ const Landing = () => {
               <span className="text-xl font-bold tracking-widest text-white">ELI5</span>
             </div>
             <div className="flex items-center gap-4">
+              <InstallPWA />
               <Link to="/login">
                 <Button variant="ghost" className="text-slate-400 hover:text-white text-sm tracking-wide">
                   Log in
