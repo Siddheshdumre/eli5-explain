@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Brain, ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -42,6 +42,7 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
+      if (!isSupabaseConfigured) throw new Error("Accounts are not set up yet: add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env, then restart the dev server.");
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -59,10 +60,10 @@ const Signup = () => {
         description: "Welcome to ELI5.AI! You can now start learning.",
       });
       navigate('/app');
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Signup failed",
-        description: error.message || "Something went wrong.",
+        description: error instanceof Error && error.message ? error.message : "Something went wrong.",
         variant: "destructive"
       });
     } finally {

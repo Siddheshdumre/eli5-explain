@@ -5,27 +5,25 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 import wikipedia
 import os
-import requests
-from dotenv import load_dotenv
-from supabase import create_client, Client
 import json
+from dotenv import load_dotenv
+from supabase import create_client, Client, ClientOptions
 
 # LangChain Imports
 from langchain_groq import ChatGroq
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import SystemMessage
 
 load_dotenv()
 
-# Supabase Auth Client
+# Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
-supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# Get API key from environment variable
+# LLM / search config
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL") or "openai/gpt-oss-120b"
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
 app = FastAPI(title="ELI5 Universe Builder API")
@@ -44,6 +42,7 @@ class QuestionRequest(BaseModel):
     difficulty: str
     format_option: str
     context_source: str = "wikipedia" # 'wikipedia' or 'advanced_web_search'
+    thread_id: Optional[str] = None
 
 class QuizRequest(BaseModel):
     answer_text: str
@@ -60,34 +59,55 @@ class QuizQuestion(BaseModel):
     question: str = Field(description="The multiple choice question based on the text")
     options: List[str] = Field(description="Exactly 4 realistic multiple choice options")
     correct_answer: str = Field(description="The exact text of the correct option")
-    
+
 class Quiz(BaseModel):
     questions: List[QuizQuestion] = Field(description="Exactly 3 quiz questions")
 
-def verify_auth(req: Request):
+def supabase_client(token: Optional[str] = None) -> Client:
+    """Create a Supabase client. With a user token, queries run under that user's RLS policies."""
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise HTTPException(status_code=500, detail="SUPABASE_URL / SUPABASE_ANON_KEY not set.")
+    if token:
+        return create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+def get_token(req: Request) -> Optional[str]:
+    """Return the bearer token, or None for anonymous (free tier) requests."""
     auth_header = req.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    
     token = auth_header.split(" ")[1]
-    
-    if token in ["null", "undefined"]:
+    if token in ["null", "undefined", ""]:
         return None
-        
+    return token
+
+def verify_auth(req: Request):
+    """Return (user, token) for signed-in users, or (None, None) for anonymous users."""
+    token = get_token(req)
+    if token is None:
+        return None, None
     try:
-        user_response = supabase_client.auth.get_user(token)
-        if not user_response.user:
-            raise HTTPException(status_code=401, detail="Invalid session token")
-        return user_response.user
+        user_response = supabase_client().auth.get_user(token)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+    if not user_response.user:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+    return user_response.user, token
+
+def require_user_token(req: Request) -> str:
+    user, token = verify_auth(req)
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required")
+    return token
 
 def get_wikipedia_summary(query: str) -> str:
     try:
         return wikipedia.summary(query, sentences=5)
     except Exception as e:
         print(f"Wikipedia error: {e}")
-        return "Could not fetch Wikipedia summary."
+        return ""
 
 def get_system_message(level: str, style: str) -> str:
     # 1. Persona & Tone Engineering
@@ -96,14 +116,14 @@ def get_system_message(level: str, style: str) -> str:
         "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. Define key terms immediately. You MUST base your explanation around a relatable real-world analogy (like a city, the internet, or a school).",
         "Expert": "You are a university professor or senior industry expert talking to a peer. Prioritize absolute accuracy, technical precision, and depth. Do not shy away from domain-specific jargon, advanced theories, or historical context. Structure your answer logically."
     }
-    
+
     # 2. Structural & Formatting Engineering
     formats = {
         "Standard": "Provide a clear, cohesive explanation. Use bolding for key concepts.",
         "Storytelling": "Frame your entire explanation as a captivating narrative or a vivid story with characters or a clear plot to illustrate the concept.",
         "Technical Breakdown": "Structure your response entirely using clear headings, bullet points, and numbered lists. Focus heavily on the 'how' and 'why' mechanics."
     }
-    
+
     # 3. Assemble the System Prompt
     system_msg = (
         f"{styles.get(level, styles['Intermediate'])}\n\n"
@@ -113,119 +133,189 @@ def get_system_message(level: str, style: str) -> str:
         f"2. NEVER end with cheesy concluding questions, cliches, or phrases like 'Isn't that amazing?', 'Wow!', or 'Hope that helps!'. End your explanation naturally and abruptly.\n"
         f"3. Structure your response in three parts: A simple 1-sentence hook, the core explanation/analogy, and a 1-sentence practical takeaway."
     )
-    
+
     return system_msg
 
-async def langgraph_generate_stream(question: str, level: str, style: str, context_source: str):
-    if not GROQ_API_KEY:
-        yield f"data: {json.dumps({'type': 'error', 'content': 'GROQ_API_KEY not set.'})}\n\n"
+def sse(payload) -> str:
+    return f"data: {json.dumps(payload)}\n\n"
+
+def llm_error(e: Exception) -> str:
+    """Error text for the UI, with a fix-it hint when Groq has retired the configured model."""
+    msg = str(e)
+    if "model_not_found" in msg or "decommissioned" in msg:
+        msg += f" -> The model '{GROQ_MODEL}' is no longer available on Groq. Set GROQ_MODEL in backend/.env to a current model from https://console.groq.com/docs/models and restart the backend."
+    return msg
+
+def save_assistant_message(token: Optional[str], thread_id: Optional[str], content: str):
+    if not (token and thread_id and content):
         return
-        
+    try:
+        supabase_client(token).table("chat_messages").insert({
+            "thread_id": thread_id,
+            "role": "assistant",
+            "content": content
+        }).execute()
+    except Exception as e:
+        print(f"Error saving assistant message: {e}")
+
+async def langgraph_generate_stream(request: QuestionRequest, history: list, thread_id: Optional[str], token: Optional[str]):
+    if not GROQ_API_KEY:
+        yield sse({'type': 'error', 'content': 'GROQ_API_KEY not set.'})
+        return
+
+    # Yield thread ID first so the frontend can navigate to the new thread
+    if thread_id:
+        yield sse({'type': 'thread_id', 'content': thread_id})
+
     llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.7)
-    system_prompt = get_system_message(level, style)
-    
-    if context_source == "advanced_web_search":
+    system_prompt = get_system_message(request.difficulty, request.format_option)
+    question = request.question
+    full_response = ""
+
+    if request.context_source == "advanced_web_search":
         if not TAVILY_API_KEY:
-            yield f"data: {json.dumps({'type': 'error', 'content': 'TAVILY_API_KEY not set in environment.'})}\n\n"
+            yield sse({'type': 'error', 'content': 'TAVILY_API_KEY not set in environment.'})
             return
-            
+
         # Agentic Web Search Flow
-        tools = [TavilySearchResults(max_results=3)]
-        
+        tools = [TavilySearch(max_results=3, tavily_api_key=TAVILY_API_KEY)]
+
         # Override the agent system prompt to include our custom persona instructions
         agent_system_msg = SystemMessage(content=system_prompt + "\n\nYou are a seasoned researcher. Use the search tool to find necessary context before answering. You MUST answer the original user question fully based on the rules provided.")
-        
-        agent = create_react_agent(llm, tools, state_modifier=agent_system_msg)
-        
-        # We start the stream in LangGraph
+
+        agent = create_react_agent(llm, tools, prompt=agent_system_msg)
+
         try:
             # .astream_events allows us to see when tools are called and when text is generated
             async for event in agent.astream_events(
-                {"messages": [("user", f"Please explain: {question}")]},
+                {"messages": history + [("user", f"Please explain: {question}")]},
                 version="v2"
             ):
                 event_type = event["event"]
-                
+
                 # Streaming Agent Tool Usage (Thoughts/Actions)
                 if event_type == "on_tool_start":
                     tool_name = event["name"]
                     tool_input = event["data"].get("input", {}).get("query", "something")
-                    yield f"data: {json.dumps({'type': 'context', 'content': f'Agent researching: \"{tool_input}\" using {tool_name}...'})}\n\n"
-                
+                    yield sse({'type': 'context', 'content': f'Agent researching: "{tool_input}" using {tool_name}...'})
+
                 # Streaming LLM Generation (The actual answer)
                 elif event_type == "on_chat_model_stream":
                     chunk = event["data"]["chunk"]
-                    if hasattr(chunk, "content") and chunk.content:
-                        # Langchain chunk content might be a string
-                        yield f"data: {json.dumps({'type': 'chunk', 'content': chunk.content})}\n\n"
-                        
-            yield "data: [DONE]\n\n"
-            
+                    if isinstance(getattr(chunk, "content", None), str) and chunk.content:
+                        full_response += chunk.content
+                        yield sse({'type': 'chunk', 'content': chunk.content})
+
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'content': f'Agent error: {str(e)}'})}\n\n"
+            yield sse({'type': 'error', 'content': f'Agent error: {llm_error(e)}'})
+            return
 
     else:
-        # Standard Wikipedia Flow (Legacy) Fast Path
+        # Standard Wikipedia Flow (Fast Path)
         wiki_summary = get_wikipedia_summary(question)
-        if wiki_summary and wiki_summary != "Could not fetch Wikipedia summary.":
-            yield f"data: {json.dumps({'type': 'context', 'content': wiki_summary})}\n\n"
-            
+        if wiki_summary:
+            yield sse({'type': 'context', 'content': wiki_summary})
+
         user_msg = f"Please explain: {question}"
-        if wiki_summary and wiki_summary != "Could not fetch Wikipedia summary.":
+        if wiki_summary:
             user_msg = (
                 f"Here is some factual background context from Wikipedia to help ground your explanation:\n"
                 f"---\n{wiki_summary}\n---\n\n"
                 f"Based on the context above (and your own knowledge to fill gaps), please explain: {question}"
             )
 
-        messages = [
-            ("system", system_prompt),
-            ("user", user_msg)
-        ]
-        
+        messages = [("system", system_prompt)] + history + [("user", user_msg)]
+
         try:
             async for chunk in llm.astream(messages):
                 if chunk.content:
-                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk.content})}\n\n"
-            yield "data: [DONE]\n\n"
+                    full_response += chunk.content
+                    yield sse({'type': 'chunk', 'content': chunk.content})
         except Exception as e:
-             yield f"data: {json.dumps({'type': 'error', 'content': f'LLM error: {str(e)}'})}\n\n"
+            yield sse({'type': 'error', 'content': f'LLM error: {llm_error(e)}'})
+            return
+
+    save_assistant_message(token, thread_id, full_response)
+    yield "data: [DONE]\n\n"
 
 
 @app.post("/api/ask")
 async def ask_question(request: QuestionRequest, req: Request):
-    verify_auth(req)
+    user, token = verify_auth(req)
+
+    thread_id = None
+    history = []
+
+    # Persist chat history for signed-in users only (anonymous = free tier, no history)
+    if user:
+        try:
+            client = supabase_client(token)
+            thread_id = request.thread_id
+            if not thread_id:
+                title = request.question[:50] + "..." if len(request.question) > 50 else request.question
+                thread_res = client.table("chat_threads").insert({"user_id": user.id, "title": title}).execute()
+                thread_id = thread_res.data[0]["id"]
+            else:
+                msg_res = client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+                history = [(m["role"], m["content"]) for m in msg_res.data]
+
+            client.table("chat_messages").insert({
+                "thread_id": thread_id,
+                "role": "user",
+                "content": request.question
+            }).execute()
+        except Exception as e:
+            print(f"Error handling database chat logs: {e}")
+
     return StreamingResponse(
-        langgraph_generate_stream(request.question, request.difficulty, request.format_option, request.context_source),
+        langgraph_generate_stream(request, history, thread_id, token),
         media_type="text/event-stream"
     )
+
+@app.get("/api/threads")
+async def get_threads(req: Request):
+    token = require_user_token(req)
+    try:
+        res = supabase_client(token).table("chat_threads").select("*").order("created_at", desc=True).execute()
+        return {"threads": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/threads/{thread_id}/messages")
+async def get_thread_messages(thread_id: str, req: Request):
+    token = require_user_token(req)
+    try:
+        res = supabase_client(token).table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+        return {"messages": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate_quiz")
 async def generate_quiz(request: QuizRequest, req: Request):
     verify_auth(req)
-    
+
     if not GROQ_API_KEY:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not set.")
-        
+
     llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.2)
     structured_llm = llm.with_structured_output(Quiz)
-    
+
     prompt = f"Given the following text explained at a {request.difficulty} level, generate exactly 3 multiple-choice questions to test the reader's understanding. Ensure there are 4 options per question, and one clearly correct answer.\n\nTEXT:\n{request.answer_text}"
-    
+
     try:
         result = await structured_llm.ainvoke(prompt)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM Quiz Generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"LLM Quiz Generation error: {llm_error(e)}")
 
 async def explain_quiz_correction_stream(request: QuizCorrectionRequest):
     if not GROQ_API_KEY:
-        yield f"data: {json.dumps({'type': 'error', 'content': 'GROQ_API_KEY not set.'})}\n\n"
+        yield sse({'type': 'error', 'content': 'GROQ_API_KEY not set.'})
         return
-        
+
     llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.5)
-    
-    prompt = f"""You are a helpful and encouraging tutor. 
+
+    prompt = f"""You are a helpful and encouraging tutor.
 The user was asked this question: "{request.question}"
 They incorrectly answered: "{request.user_answer}"
 The correct answer is: "{request.correct_answer}"
@@ -238,10 +328,10 @@ In 2-3 sentences max, explain WHY their answer was wrong and why the correct ans
     try:
         async for chunk in llm.astream(prompt):
             if chunk.content:
-                yield f"data: {json.dumps({'type': 'chunk', 'content': chunk.content})}\n\n"
+                yield sse({'type': 'chunk', 'content': chunk.content})
         yield "data: [DONE]\n\n"
     except Exception as e:
-         yield f"data: {json.dumps({'type': 'error', 'content': f'LLM error: {str(e)}'})}\n\n"
+        yield sse({'type': 'error', 'content': f'LLM error: {llm_error(e)}'})
 
 @app.post("/api/explain_quiz_answer")
 async def explain_quiz_answer(request: QuizCorrectionRequest, req: Request):
@@ -253,4 +343,10 @@ async def explain_quiz_answer(request: QuizCorrectionRequest, req: Request):
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "groq_api": bool(GROQ_API_KEY), "model": GROQ_MODEL, "tavily_api": bool(TAVILY_API_KEY)}
+    return {
+        "status": "healthy",
+        "groq_api": bool(GROQ_API_KEY),
+        "model": GROQ_MODEL,
+        "tavily_api": bool(TAVILY_API_KEY),
+        "supabase": bool(SUPABASE_URL and SUPABASE_ANON_KEY),
+    }

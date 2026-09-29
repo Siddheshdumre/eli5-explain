@@ -6,7 +6,8 @@ This guide will help you deploy the ELI5 application to Render.com, which includ
 ## Prerequisites
 - A Render.com account
 - Your code pushed to a Git repository (GitHub, GitLab, etc.)
-- Together AI API key (already configured)
+- A Groq API key, a Supabase project (URL + anon key), and optionally a Tavily API key
+- The database schema applied: run `supabase/schema.sql` in the Supabase SQL Editor
 
 ## Deployment Steps
 
@@ -53,12 +54,11 @@ If you prefer to deploy services individually:
 ### 3. Environment Variables
 
 #### Backend Environment Variables:
-- `TOGETHER_API_KEY`: Your Together AI API key (already configured)
-- `FRONTEND_URL`: `https://eli5-frontend.onrender.com`
-- `CORS_ORIGINS`: `https://eli5-frontend.onrender.com,http://localhost:3000,http://localhost:8080`
+- `GROQ_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (required), `TAVILY_API_KEY` (optional) — see `env.example`
 
 #### Frontend Environment Variables:
 - `VITE_API_URL`: `https://eli5-backend.onrender.com`
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`: same values as the backend
 
 ### 4. Post-Deployment
 
@@ -80,11 +80,11 @@ If you prefer to deploy services individually:
    - Ensure all dependencies are in `requirements.txt` and `package.json`
 
 2. **CORS Errors**:
-   - Verify the `CORS_ORIGINS` environment variable includes your frontend URL
+   - The backend allows all origins; if you see CORS errors, the backend is usually down or crashing
    - Check that the frontend URL in `VITE_API_URL` matches your backend URL
 
 3. **API Key Issues**:
-   - Ensure the `TOGETHER_API_KEY` is set correctly
+   - Ensure `GROQ_API_KEY` is set correctly (check `/api/health`)
    - Test the API key locally first
 
 4. **Service Not Starting**:
@@ -93,7 +93,7 @@ If you prefer to deploy services individually:
 
 ### Health Check Endpoints:
 - Backend: `https://eli5-backend.onrender.com/api/health`
-- Should return: `{"status": "healthy", "together_api": true}`
+- Should return: `{"status": "healthy", "groq_api": true, "supabase": true, ...}`
 
 ## Monitoring
 

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Brain, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +21,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      if (!isSupabaseConfigured) throw new Error("Accounts are not set up yet: add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env, then restart the dev server.");
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -33,10 +34,10 @@ const Login = () => {
         description: "Welcome back to ELI5.AI",
       });
       navigate('/app');
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: error instanceof Error && error.message ? error.message : "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } finally {

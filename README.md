@@ -1,6 +1,6 @@
 # ELI5 Universe Builder 🌌
 
-An advanced, AI-powered conversational platform that explains complex topics effortlessly. Powered by the incredibly fast Llama 3 model (via Groq API), this application acts as a stateful, agentic tutor capable of adapting to different audiences, searching the web in real-time, and aggressively verifying learning through generated quizzes.
+An advanced, AI-powered conversational platform that explains complex topics effortlessly. Powered by ultra-fast open models on the Groq API (default: OpenAI gpt-oss-120b), this application acts as a stateful, agentic tutor capable of adapting to different audiences, searching the web in real-time, and aggressively verifying learning through generated quizzes.
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
@@ -27,7 +27,7 @@ An advanced, AI-powered conversational platform that explains complex topics eff
 
 ### Backend Architecture
 *   **FastAPI (Python):** Blazing fast, asynchronous HTTP server handling streaming responses dynamically.
-*   **Groq API (Llama 3):** Providing ultra-fast inference to give the LLM near-zero latency.
+*   **Groq API (gpt-oss-120b, configurable via `GROQ_MODEL`):** Providing ultra-fast inference to give the LLM near-zero latency.
 *   **LangGraph & LangChain:** Orchestrating the "Agentic Web Search" workflows and structured output generation.
 *   **Supabase (PostgreSQL):** Managing users, threads, messages, and RLS policies.
 *   **Wikipedia & Tavily Search API:** Fetching live unstructured text context for grounded RAG (Retrieval-Augmented Generation).
@@ -37,47 +37,58 @@ An advanced, AI-powered conversational platform that explains complex topics eff
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   Node.js (v18 or higher)
-*   Python 3.10 or higher
-*   A [Groq](https://console.groq.com/) API Key
-*   A [Supabase](https://supabase.com/) Project (URL & Anon Key)
-*   A [Tavily](https://tavily.com/) API Key for optional Agentic Search.
+*   Node.js 20 or higher
+*   Python 3.12 or 3.13 (3.11 also works)
+*   A [Groq](https://console.groq.com/keys) API Key (required)
+*   A [Supabase](https://supabase.com/) Project: URL & anon key (required for login and chat history; guest mode works without it)
+*   A [Tavily](https://app.tavily.com/) API Key (optional, only for Agentic Web Search)
 
-### Backend Setup
-1. Open a new terminal and navigate to the backend (`backend/` or `api/` for remote serverless deployment):
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Or `venv\Scripts\activate` on Windows
-   pip install -r requirements.txt
-   ```
-2. Set up your environment variables locally in `backend/.env` exactly like:
-   ```env
-   GROQ_API_KEY=your_groq_key
-   TAVILY_API_KEY=your_tavily_key
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_anon_key
-   ```
-3. Run the development server cleanly:
-   ```bash
-   uvicorn main:app --reload --port 8000
-   ```
+### 1. Fill in the env files
+The app uses **two** env files. Both are git-ignored, and [`env.example`](env.example) documents every variable.
 
-### Frontend Setup
-1. In a new terminal, navigate to the root directory and install dependencies:
-   ```bash
-   npm install
-   ```
-2. Create a `.env` in the root explicitly mapping the Supabase credentials for the client:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_anon_key
-   ```
-3. Start the Vite dev server:
-   ```bash
-   npm run dev
-   ```
-4. Access the gorgeous UI at [http://localhost:5173](http://localhost:5173) (or whichever port Vite allocates)!
+`backend/.env`
+```env
+GROQ_API_KEY=gsk_...
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+TAVILY_API_KEY=tvly-...
+GROQ_MODEL=openai/gpt-oss-120b
+```
+
+`.env` (project root)
+```env
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_API_URL=
+```
+Supabase values are in **Project Settings → API**. Use the *anon / publishable* key, never the *service_role* key.
+
+### 2. Create the database tables (once)
+Open your Supabase project → **SQL Editor**, paste the contents of [`supabase/schema.sql`](supabase/schema.sql) and run it. This creates the `chat_threads`, `chat_messages` and `user_profiles` tables with Row Level Security.
+
+### 3. Start the app
+**Windows (one command):** double-click `start.bat` (or run `powershell -ExecutionPolicy Bypass -File start.ps1`).
+It installs missing dependencies, warns about empty env values, starts the backend in its own window, then starts the frontend and opens [http://localhost:8080](http://localhost:8080).
+
+**Manual (any OS)**, in two terminals:
+```bash
+# Terminal 1 - backend on :8000
+cd backend
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# Terminal 2 - frontend on :8080 (proxies /api/* to :8000)
+npm ci
+npm run dev
+```
+
+**Docker:** `docker compose up -d --build`, then open [http://localhost](http://localhost).
+
+To check the backend, open [http://localhost:8000/api/health](http://localhost:8000/api/health) (it shows which keys are configured) or run `python backend/test_api.py`.
+
+> `backend/main.py` is the source of truth; `api/index.py` is an identical copy used by Vercel. After editing the backend, run `cp backend/main.py api/index.py`.
 
 ## 🔮 Usage Journey
 1. Navigate to the web app, click **SignUp** (to create an account via Supabase auth), and then **Login**.

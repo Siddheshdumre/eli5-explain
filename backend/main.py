@@ -1,33 +1,37 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 import wikipedia
 import os
-import requests
+import json
 from dotenv import load_dotenv
 from supabase import create_client, Client, ClientOptions
-import json
+
+# LangChain Imports
+from langchain_groq import ChatGroq
+from langchain_tavily import TavilySearch
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import SystemMessage
 
 load_dotenv()
 
-# Supabase Auth Client
+# Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
-supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# Get API key from environment variable
+# LLM / search config
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = os.getenv("GROQ_MODEL") or "openai/gpt-oss-120b"
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
 app = FastAPI(title="ELI5 Universe Builder API")
 
-# Configure CORS for production (since Vercel hosts both frontend and backend on the same origin, we can just allow the same origin or be permissive)
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Since it's serverless on the same domain, wildcards or specific domains work. But we'll leave it open for simplicity on serverless.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,39 +41,89 @@ class QuestionRequest(BaseModel):
     question: str
     difficulty: str
     format_option: str
-    use_wikipedia: bool = True
-    context_source: str = "wikipedia"
+    context_source: str = "wikipedia" # 'wikipedia' or 'advanced_web_search'
     thread_id: Optional[str] = None
 
-class QuestionResponse(BaseModel):
-    answer: str
-    wikipedia_summary: Optional[str] = None
+class QuizRequest(BaseModel):
+    answer_text: str
+    difficulty: str
+
+class QuizCorrectionRequest(BaseModel):
+    question: str
+    user_answer: str
+    correct_answer: str
+    original_context: str
+    difficulty: str
+
+class QuizQuestion(BaseModel):
+    question: str = Field(description="The multiple choice question based on the text")
+    options: List[str] = Field(description="Exactly 4 realistic multiple choice options")
+    correct_answer: str = Field(description="The exact text of the correct option")
+
+class Quiz(BaseModel):
+    questions: List[QuizQuestion] = Field(description="Exactly 3 quiz questions")
+
+def supabase_client(token: Optional[str] = None) -> Client:
+    """Create a Supabase client. With a user token, queries run under that user's RLS policies."""
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise HTTPException(status_code=500, detail="SUPABASE_URL / SUPABASE_ANON_KEY not set.")
+    if token:
+        return create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+def get_token(req: Request) -> Optional[str]:
+    """Return the bearer token, or None for anonymous (free tier) requests."""
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = auth_header.split(" ")[1]
+    if token in ["null", "undefined", ""]:
+        return None
+    return token
+
+def verify_auth(req: Request):
+    """Return (user, token) for signed-in users, or (None, None) for anonymous users."""
+    token = get_token(req)
+    if token is None:
+        return None, None
+    try:
+        user_response = supabase_client().auth.get_user(token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+    if not user_response.user:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+    return user_response.user, token
+
+def require_user_token(req: Request) -> str:
+    user, token = verify_auth(req)
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required")
+    return token
 
 def get_wikipedia_summary(query: str) -> str:
     try:
         return wikipedia.summary(query, sentences=5)
     except Exception as e:
         print(f"Wikipedia error: {e}")
-        return "Could not fetch Wikipedia summary."
+        return ""
 
-def build_messages(question: str, context: str, level: str, style: str, previous_messages: list = None) -> list:
-    if previous_messages is None:
-        previous_messages = []
-        
+def get_system_message(level: str, style: str) -> str:
     # 1. Persona & Tone Engineering
     styles = {
         "ELI5 (Child)": "You are a warm, imaginative teacher talking to a 5-year-old child. Use simple words and keep sentences short. NEVER use jargon. You MUST build your entire explanation around one single, cohesive, real-world analogy (like a playground, a sandbox, or a toy box).",
         "Intermediate": "You are an engaging high school teacher explaining a concept to a curious teenager. Strike a balance between approachability and factual depth. Define key terms immediately. You MUST base your explanation around a relatable real-world analogy (like a city, the internet, or a school).",
         "Expert": "You are a university professor or senior industry expert talking to a peer. Prioritize absolute accuracy, technical precision, and depth. Do not shy away from domain-specific jargon, advanced theories, or historical context. Structure your answer logically."
     }
-    
+
     # 2. Structural & Formatting Engineering
     formats = {
         "Standard": "Provide a clear, cohesive explanation. Use bolding for key concepts.",
         "Storytelling": "Frame your entire explanation as a captivating narrative or a vivid story with characters or a clear plot to illustrate the concept.",
         "Technical Breakdown": "Structure your response entirely using clear headings, bullet points, and numbered lists. Focus heavily on the 'how' and 'why' mechanics."
     }
-    
+
     # 3. Assemble the System Prompt
     system_msg = (
         f"{styles.get(level, styles['Intermediate'])}\n\n"
@@ -80,183 +134,219 @@ def build_messages(question: str, context: str, level: str, style: str, previous
         f"3. Structure your response in three parts: A simple 1-sentence hook, the core explanation/analogy, and a 1-sentence practical takeaway."
     )
 
-    messages = [{"role": "system", "content": system_msg}]
-    messages.extend(previous_messages)
+    return system_msg
 
-    # 4. Assemble the User Prompt with Context
-    user_msg = f"Please explain: {question}"
-    if context and context != "Could not fetch Wikipedia summary.":
-        user_msg = (
-            f"Here is some factual background context from Wikipedia to help ground your explanation:\n"
-            f"---\n{context}\n---\n\n"
-            f"Based on the context above (and your own knowledge to fill gaps), please explain: {question}"
-        )
+def sse(payload) -> str:
+    return f"data: {json.dumps(payload)}\n\n"
 
-    messages.append({"role": "user", "content": user_msg})
-    return messages
+def llm_error(e: Exception) -> str:
+    """Error text for the UI, with a fix-it hint when Groq has retired the configured model."""
+    msg = str(e)
+    if "model_not_found" in msg or "decommissioned" in msg:
+        msg += f" -> The model '{GROQ_MODEL}' is no longer available on Groq. Set GROQ_MODEL in backend/.env to a current model from https://console.groq.com/docs/models and restart the backend."
+    return msg
 
-import json
-
-def groq_generate_stream(messages: list, wiki_summary: Optional[str], thread_id: str, auth_token: str):
-    if not GROQ_API_KEY:
-        yield f"data: {json.dumps({'type': 'error', 'content': 'GROQ_API_KEY not set.'})}\n\n"
+def save_assistant_message(token: Optional[str], thread_id: Optional[str], content: str):
+    if not (token and thread_id and content):
         return
-        
-    # Yield thread ID first so frontend can update its state
-    yield f"data: {json.dumps({'type': 'thread_id', 'content': thread_id})}\n\n"
-        
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": GROQ_MODEL,
-        "messages": messages,
-        "max_tokens": 1024,
-        "temperature": 0.7,
-        "stream": True # Enable streaming from Groq
-    }
-    
-    # 1. Yield the wikipedia context first so the frontend can display it immediately
-    if wiki_summary:
-        yield f"data: {json.dumps({'type': 'context', 'content': wiki_summary})}\n\n"
-        
-    full_response = ""
     try:
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload, stream=True, timeout=50)
-        response.raise_for_status()
-        
-        # 2. Loop over the stream chunks from Groq
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8')
-                if line_str.startswith("data: ") and line_str != "data: [DONE]":
-                    try:
-                        data = json.loads(line_str[6:])
-                        token_str = data["choices"][0].get("delta", {}).get("content", "")
-                        if token_str:
-                            full_response += token_str
-                            # 3. Yield each new word/token to the frontend
-                            yield f"data: {json.dumps({'type': 'chunk', 'content': token_str})}\n\n"
-                    except Exception:
-                        pass
-        
-        # 4. Save the assistant's final message to the database
-        if full_response and thread_id and auth_token and auth_token not in ["null", "undefined"]:
-            try:
-                user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {auth_token}"}))
-                user_client.table("chat_messages").insert({
-                    "thread_id": thread_id,
-                    "role": "assistant",
-                    "content": full_response
-                }).execute()
-            except Exception as e:
-                print(f"Error saving assistant message: {e}")
-
-        yield "data: [DONE]\n\n"
-        
-    except requests.exceptions.HTTPError as e:
-        error_detail = ""
-        try:
-            error_detail = response.json().get("error", {}).get("message", str(e))
-        except Exception:
-            error_detail = str(e)
-        yield f"data: {json.dumps({'type': 'error', 'content': f'Groq API error: {error_detail}'})}\n\n"
+        supabase_client(token).table("chat_messages").insert({
+            "thread_id": thread_id,
+            "role": "assistant",
+            "content": content
+        }).execute()
     except Exception as e:
-        yield f"data: {json.dumps({'type': 'error', 'content': f'Groq API error: {str(e)}'})}\n\n"
+        print(f"Error saving assistant message: {e}")
+
+async def langgraph_generate_stream(request: QuestionRequest, history: list, thread_id: Optional[str], token: Optional[str]):
+    if not GROQ_API_KEY:
+        yield sse({'type': 'error', 'content': 'GROQ_API_KEY not set.'})
+        return
+
+    # Yield thread ID first so the frontend can navigate to the new thread
+    if thread_id:
+        yield sse({'type': 'thread_id', 'content': thread_id})
+
+    llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.7)
+    system_prompt = get_system_message(request.difficulty, request.format_option)
+    question = request.question
+    full_response = ""
+
+    if request.context_source == "advanced_web_search":
+        if not TAVILY_API_KEY:
+            yield sse({'type': 'error', 'content': 'TAVILY_API_KEY not set in environment.'})
+            return
+
+        # Agentic Web Search Flow
+        tools = [TavilySearch(max_results=3, tavily_api_key=TAVILY_API_KEY)]
+
+        # Override the agent system prompt to include our custom persona instructions
+        agent_system_msg = SystemMessage(content=system_prompt + "\n\nYou are a seasoned researcher. Use the search tool to find necessary context before answering. You MUST answer the original user question fully based on the rules provided.")
+
+        agent = create_react_agent(llm, tools, prompt=agent_system_msg)
+
+        try:
+            # .astream_events allows us to see when tools are called and when text is generated
+            async for event in agent.astream_events(
+                {"messages": history + [("user", f"Please explain: {question}")]},
+                version="v2"
+            ):
+                event_type = event["event"]
+
+                # Streaming Agent Tool Usage (Thoughts/Actions)
+                if event_type == "on_tool_start":
+                    tool_name = event["name"]
+                    tool_input = event["data"].get("input", {}).get("query", "something")
+                    yield sse({'type': 'context', 'content': f'Agent researching: "{tool_input}" using {tool_name}...'})
+
+                # Streaming LLM Generation (The actual answer)
+                elif event_type == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"]
+                    if isinstance(getattr(chunk, "content", None), str) and chunk.content:
+                        full_response += chunk.content
+                        yield sse({'type': 'chunk', 'content': chunk.content})
+
+        except Exception as e:
+            yield sse({'type': 'error', 'content': f'Agent error: {llm_error(e)}'})
+            return
+
+    else:
+        # Standard Wikipedia Flow (Fast Path)
+        wiki_summary = get_wikipedia_summary(question)
+        if wiki_summary:
+            yield sse({'type': 'context', 'content': wiki_summary})
+
+        user_msg = f"Please explain: {question}"
+        if wiki_summary:
+            user_msg = (
+                f"Here is some factual background context from Wikipedia to help ground your explanation:\n"
+                f"---\n{wiki_summary}\n---\n\n"
+                f"Based on the context above (and your own knowledge to fill gaps), please explain: {question}"
+            )
+
+        messages = [("system", system_prompt)] + history + [("user", user_msg)]
+
+        try:
+            async for chunk in llm.astream(messages):
+                if chunk.content:
+                    full_response += chunk.content
+                    yield sse({'type': 'chunk', 'content': chunk.content})
+        except Exception as e:
+            yield sse({'type': 'error', 'content': f'LLM error: {llm_error(e)}'})
+            return
+
+    save_assistant_message(token, thread_id, full_response)
+    yield "data: [DONE]\n\n"
+
 
 @app.post("/api/ask")
 async def ask_question(request: QuestionRequest, req: Request):
-    # 1. Verify the Supabase JWT token
-    auth_header = req.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    
-    token = auth_header.split(" ")[1]
-    
-    user_id = None
-    if token and token not in ["null", "undefined"]:
-        try:
-            user_response = supabase_client.auth.get_user(token)
-            if user_response.user:
-                user_id = user_response.user.id
-        except Exception as e:
-            pass # allow anonymous
+    user, token = verify_auth(req)
 
-    thread_id = request.thread_id
-    previous_messages = []
-    
-    try:
-        if user_id:
-            user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    thread_id = None
+    history = []
+
+    # Persist chat history for signed-in users only (anonymous = free tier, no history)
+    if user:
+        try:
+            client = supabase_client(token)
+            thread_id = request.thread_id
             if not thread_id:
-                # Create a new thread
                 title = request.question[:50] + "..." if len(request.question) > 50 else request.question
-                thread_res = user_client.table("chat_threads").insert({"user_id": user_id, "title": title}).execute()
-                thread_id = thread_res.data[0]['id']
+                thread_res = client.table("chat_threads").insert({"user_id": user.id, "title": title}).execute()
+                thread_id = thread_res.data[0]["id"]
             else:
-                # Fetch past messages to load history
-                msg_res = user_client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
-                for msg in msg_res.data:
-                    previous_messages.append({"role": msg["role"], "content": msg["content"]})
-                    
-            # Save the current user question to the database
-            user_client.table("chat_messages").insert({
+                msg_res = client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+                history = [(m["role"], m["content"]) for m in msg_res.data]
+
+            client.table("chat_messages").insert({
                 "thread_id": thread_id,
                 "role": "user",
                 "content": request.question
             }).execute()
-        else:
-            thread_id = "" # Force empty thread for anonymous users
-            
-    except Exception as e:
-        print(f"Error handling database chat logs: {e}")
+        except Exception as e:
+            print(f"Error handling database chat logs: {e}")
 
-    # 2. Proceed with Generation
-    wiki_summary = ""
-    if request.use_wikipedia:
-        wiki_summary = get_wikipedia_summary(request.question)
-        
-    messages = build_messages(
-        request.question,
-        wiki_summary,
-        request.difficulty,
-        request.format_option,
-        previous_messages
-    )
-    
-    # 4. Return the open stream to the client
     return StreamingResponse(
-        groq_generate_stream(messages, wiki_summary if request.use_wikipedia else None, thread_id, token),
+        langgraph_generate_stream(request, history, thread_id, token),
         media_type="text/event-stream"
     )
 
 @app.get("/api/threads")
 async def get_threads(req: Request):
-    auth_header = req.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = auth_header.split(" ")[1]
+    token = require_user_token(req)
     try:
-        user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
-        res = user_client.table("chat_threads").select("*").order("created_at", desc=True).execute()
+        res = supabase_client(token).table("chat_threads").select("*").order("created_at", desc=True).execute()
         return {"threads": res.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/threads/{thread_id}/messages")
 async def get_thread_messages(thread_id: str, req: Request):
-    auth_header = req.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = auth_header.split(" ")[1]
+    token = require_user_token(req)
     try:
-        user_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
-        res = user_client.table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
+        res = supabase_client(token).table("chat_messages").select("*").eq("thread_id", thread_id).order("created_at").execute()
         return {"messages": res.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/generate_quiz")
+async def generate_quiz(request: QuizRequest, req: Request):
+    verify_auth(req)
+
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not set.")
+
+    llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.2)
+    structured_llm = llm.with_structured_output(Quiz)
+
+    prompt = f"Given the following text explained at a {request.difficulty} level, generate exactly 3 multiple-choice questions to test the reader's understanding. Ensure there are 4 options per question, and one clearly correct answer.\n\nTEXT:\n{request.answer_text}"
+
+    try:
+        result = await structured_llm.ainvoke(prompt)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM Quiz Generation error: {llm_error(e)}")
+
+async def explain_quiz_correction_stream(request: QuizCorrectionRequest):
+    if not GROQ_API_KEY:
+        yield sse({'type': 'error', 'content': 'GROQ_API_KEY not set.'})
+        return
+
+    llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.5)
+
+    prompt = f"""You are a helpful and encouraging tutor.
+The user was asked this question: "{request.question}"
+They incorrectly answered: "{request.user_answer}"
+The correct answer is: "{request.correct_answer}"
+
+Here is the original context they read:
+"{request.original_context}"
+
+In 2-3 sentences max, explain WHY their answer was wrong and why the correct answer is right, using a {request.difficulty} tone. Be very encouraging."""
+
+    try:
+        async for chunk in llm.astream(prompt):
+            if chunk.content:
+                yield sse({'type': 'chunk', 'content': chunk.content})
+        yield "data: [DONE]\n\n"
+    except Exception as e:
+        yield sse({'type': 'error', 'content': f'LLM error: {llm_error(e)}'})
+
+@app.post("/api/explain_quiz_answer")
+async def explain_quiz_answer(request: QuizCorrectionRequest, req: Request):
+    verify_auth(req)
+    return StreamingResponse(
+        explain_quiz_correction_stream(request),
+        media_type="text/event-stream"
+    )
+
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "groq_api": bool(GROQ_API_KEY), "model": GROQ_MODEL}
+    return {
+        "status": "healthy",
+        "groq_api": bool(GROQ_API_KEY),
+        "model": GROQ_MODEL,
+        "tavily_api": bool(TAVILY_API_KEY),
+        "supabase": bool(SUPABASE_URL and SUPABASE_ANON_KEY),
+    }

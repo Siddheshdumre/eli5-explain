@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { MessageSquare, Plus, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/lib/supabase"
+import { apiUrl } from "@/lib/api"
 import {
     Sidebar,
     SidebarContent,
@@ -15,8 +16,14 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
+interface ChatThread {
+    id: string
+    title: string
+    created_at: string
+}
+
 export function AppSidebar({ currentThreadId }: { currentThreadId?: string }) {
-    const [threads, setThreads] = useState<any[]>([])
+    const [threads, setThreads] = useState<ChatThread[]>([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
@@ -29,7 +36,7 @@ export function AppSidebar({ currentThreadId }: { currentThreadId?: string }) {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) return
 
-            const res = await fetch('/api/threads', {
+            const res = await fetch(apiUrl('/api/threads'), {
                 headers: { Authorization: `Bearer ${session.access_token}` }
             })
             if (res.ok) {

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { BrainCircuit, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
 export interface QuizQuestion {
@@ -52,7 +53,7 @@ export function Quiz({ data, originalContext, difficulty }: QuizProps) {
             const { data: { session } } = await supabase.auth.getSession();
             const authHeader = session ? `Bearer ${session.access_token}` : "Bearer null";
 
-            const res = await fetch(`/api/explain_quiz_answer`, {
+            const res = await fetch(apiUrl(`/api/explain_quiz_answer`), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,7 +92,7 @@ export function Quiz({ data, originalContext, difficulty }: QuizProps) {
                             if (payload.type === 'chunk') {
                                 setExplanationStream(prev => prev + payload.content);
                             }
-                        } catch (err) { }
+                        } catch { /* ignore incomplete SSE frame */ }
                     }
                 }
             }
@@ -200,7 +201,7 @@ export function Quiz({ data, originalContext, difficulty }: QuizProps) {
                                         <Loader2 className="h-4 w-4 animate-spin" /> Thinking...
                                     </div>
                                 )}
-                                <div className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300">
+                                <div className="prose prose-sm max-w-none text-slate-700 dark:prose-invert dark:text-slate-300">
                                     <ReactMarkdown>{explanationStream}</ReactMarkdown>
                                 </div>
                             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Quiz, QuizData } from "./Quiz";
 import { supabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -56,7 +57,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch(`/api/threads/${id}/messages`, {
+      const res = await fetch(apiUrl(`/api/threads/${id}/messages`), {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       if (res.ok) {
@@ -76,7 +77,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
       const { data: { session } } = await supabase.auth.getSession();
       const authHeader = session ? `Bearer ${session.access_token}` : "Bearer null";
 
-      const res = await fetch(`/api/generate_quiz`, {
+      const res = await fetch(apiUrl(`/api/generate_quiz`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,7 +137,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
         localStorage.setItem('eli5_free_usage', usageCount.toString());
       }
 
-      const res = await fetch(`/api/ask`, {
+      const res = await fetch(apiUrl(`/api/ask`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,26 +176,30 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
             const dataStr = part.replace('data: ', '').trim();
             if (dataStr === '[DONE]') continue;
 
+            let payload;
             try {
-              const payload = JSON.parse(dataStr);
-              if (payload.type === 'thread_id') {
-                if (!threadId) {
-                  isFirstNewThread = true;
-                  newThreadId = payload.content;
-                }
-              } else if (payload.type === 'chunk') {
-                currentAnswer += payload.content;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: currentAnswer };
-                  return newMsgs;
-                });
-                await new Promise(resolve => setTimeout(resolve, 15));
-              } else if (payload.type === 'error') {
-                throw new Error(payload.content);
-              }
+              payload = JSON.parse(dataStr);
             } catch (err) {
               console.error("Error parsing stream payload:", err);
+              continue;
+            }
+
+            // Backend errors (e.g. missing API key) must reach the outer catch so the user sees a toast
+            if (payload.type === 'error') {
+              throw new Error(payload.content);
+            } else if (payload.type === 'thread_id') {
+              if (!threadId) {
+                isFirstNewThread = true;
+                newThreadId = payload.content;
+              }
+            } else if (payload.type === 'chunk') {
+              currentAnswer += payload.content;
+              setMessages(prev => {
+                const newMsgs = [...prev];
+                newMsgs[newMsgs.length - 1] = { ...newMsgs[newMsgs.length - 1], content: currentAnswer };
+                return newMsgs;
+              });
+              await new Promise(resolve => setTimeout(resolve, 15));
             }
           }
         }
@@ -283,7 +288,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
 
         {messages.map((m, idx) => (
           <div key={m.id || idx} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 ${m.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border shadow-sm rounded-bl-sm'}`}>
+            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 ${m.role === 'user' ? 'bg-primary text-primary-foreground dark:bg-secondary dark:text-secondary-foreground rounded-br-sm' : 'bg-card border shadow-sm rounded-bl-sm'}`}>
               {m.role === 'assistant' && (
                 <div className="flex items-center justify-between mb-2 text-primary font-medium text-sm">
                   <div className="flex items-center gap-2">
@@ -299,7 +304,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
                   )}
                 </div>
               )}
-              <div className={`prose prose-sm max-w-none ${m.role === 'user' ? 'prose-invert' : ''}`}>
+              <div className={`prose prose-sm max-w-none ${m.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
                 <ReactMarkdown>{m.content}</ReactMarkdown>
                 {m.role === 'assistant' && !m.content && loading && idx === messages.length - 1 && (
                   <span className="flex items-center gap-2 text-muted-foreground animate-pulse mt-2">

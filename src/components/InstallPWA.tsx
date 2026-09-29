@@ -2,19 +2,24 @@ import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from './ui/button';
 
+// Chromium-only event, not in the standard DOM typings
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+}
+
 export function InstallPWA() {
     const [supportsPWA, setSupportsPWA] = useState(true);
-    const [promptInstall, setPromptInstall] = useState<any>(null);
+    const [promptInstall, setPromptInstall] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
         const handler = (e: Event) => {
             e.preventDefault();
             setSupportsPWA(true);
-            setPromptInstall(e);
+            setPromptInstall(e as BeforeInstallPromptEvent);
         };
         window.addEventListener("beforeinstallprompt", handler);
 
-        return () => window.removeEventListener("transitionend", handler);
+        return () => window.removeEventListener("beforeinstallprompt", handler);
     }, []);
 
     const onClick = (evt: React.MouseEvent<HTMLButtonElement>) => {

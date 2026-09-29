@@ -1,3 +1,4 @@
+import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { ELI5Question } from "@/components/ELI5Question";
@@ -9,9 +10,10 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { InstallPWA } from "@/components/InstallPWA";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function AppPage() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { threadId } = useParams<{ threadId: string }>();
@@ -56,6 +58,7 @@ export default function AppPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <InstallPWA />
             {session ? (
               <>
