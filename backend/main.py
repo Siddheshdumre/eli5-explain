@@ -143,7 +143,7 @@ def llm_error(e: Exception) -> str:
     """Error text for the UI, with a fix-it hint when Groq has retired the configured model."""
     msg = str(e)
     if "model_not_found" in msg or "decommissioned" in msg:
-        msg += f" -> The model '{GROQ_MODEL}' is no longer available on Groq. Set GROQ_MODEL in backend/.env to a current model from https://console.groq.com/docs/models and restart the backend."
+        msg += f" -> The model '{GROQ_MODEL}' is no longer available on Groq. Set the GROQ_MODEL environment variable (backend/.env locally, or Settings -> Environment Variables on Vercel, then redeploy) to a current model from https://console.groq.com/docs/models, or remove it to use the default."
     return msg
 
 def save_assistant_message(token: Optional[str], thread_id: Optional[str], content: str):

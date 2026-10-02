@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { MessageSquare, Plus, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/lib/supabase"
 import { apiUrl } from "@/lib/api"
@@ -22,7 +21,7 @@ interface ChatThread {
     created_at: string
 }
 
-export function AppSidebar({ currentThreadId }: { currentThreadId?: string }) {
+export function AppSidebar({ currentThreadId, signedIn }: { currentThreadId?: string; signedIn: boolean }) {
     const [threads, setThreads] = useState<ChatThread[]>([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
@@ -50,32 +49,23 @@ export function AppSidebar({ currentThreadId }: { currentThreadId?: string }) {
         }
     }
 
+    const emptyMessage = signedIn ? "No saved threads yet." : "Log in to keep your threads."
+
     return (
         <Sidebar>
             <SidebarHeader className="p-4">
-                <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 shadow-sm"
-                    onClick={() => {
-                        navigate('/app')
-                    }}
-                >
-                    <Plus className="h-4 w-4" />
-                    New Conversation
+                <Button variant="outline" className="h-10 w-full justify-start t-small font-medium" onClick={() => navigate('/app')}>
+                    New conversation
                 </Button>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">History</SidebarGroupLabel>
+                    <SidebarGroupLabel className="px-2 t-label font-medium text-muted-foreground">History</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        {loading ? (
-                            <div className="flex justify-center p-4">
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            </div>
+                        {loading && signedIn ? (
+                            <p role="status" className="px-2 py-2 t-label text-muted-foreground">Loading…</p>
                         ) : threads.length === 0 ? (
-                            <div className="text-center p-4 text-sm text-muted-foreground">
-                                No history yet. Start asking!
-                            </div>
+                            <p className="px-2 py-2 t-label text-muted-foreground">{emptyMessage}</p>
                         ) : (
                             <SidebarMenu>
                                 {threads.map((thread) => (
@@ -84,8 +74,8 @@ export function AppSidebar({ currentThreadId }: { currentThreadId?: string }) {
                                             isActive={thread.id === currentThreadId}
                                             onClick={() => navigate(`/app/${thread.id}`)}
                                             tooltip={thread.title}
+                                            className="h-10 t-small"
                                         >
-                                            <MessageSquare className="h-4 w-4 min-w-4 text-muted-foreground" />
                                             <span className="truncate">{thread.title}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>

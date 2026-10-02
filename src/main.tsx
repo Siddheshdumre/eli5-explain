@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+// The one typeface, self-hosted, for every surface
+import '@fontsource-variable/schibsted-grotesk'
 import './index.css'
 import { registerSW } from 'virtual:pwa-register'
 

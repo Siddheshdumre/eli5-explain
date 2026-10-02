@@ -1,47 +1,50 @@
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 // Chromium-only event, not in the standard DOM typings
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
 }
 
-export function InstallPWA() {
-    const [supportsPWA, setSupportsPWA] = useState(true);
+/** Offers "Install app" only while the browser can actually install it (Chromium, not yet installed). */
+export function InstallPWA({ className }: { className?: string }) {
     const [promptInstall, setPromptInstall] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
-        const handler = (e: Event) => {
+        const onPrompt = (e: Event) => {
             e.preventDefault();
-            setSupportsPWA(true);
             setPromptInstall(e as BeforeInstallPromptEvent);
         };
-        window.addEventListener("beforeinstallprompt", handler);
+        const onInstalled = () => setPromptInstall(null);
+        window.addEventListener("beforeinstallprompt", onPrompt);
+        window.addEventListener("appinstalled", onInstalled);
 
-        return () => window.removeEventListener("beforeinstallprompt", handler);
+        return () => {
+            window.removeEventListener("beforeinstallprompt", onPrompt);
+            window.removeEventListener("appinstalled", onInstalled);
+        };
     }, []);
 
-    const onClick = (evt: React.MouseEvent<HTMLButtonElement>) => {
-        evt.preventDefault();
-        if (!promptInstall) {
-            return;
-        }
-        promptInstall.prompt();
+    if (!promptInstall) return null;
+
+    const onClick = async () => {
+        await promptInstall.prompt();
+        // The prompt can only be used once; the browser fires a fresh event if it becomes available again
+        setPromptInstall(null);
     };
 
-    // Removed `if (!supportsPWA) return null;` so the button always renders visually.
     return (
         <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 border-cyan-500/20 shadow-[0_0_10px_rgba(0,245,255,0.1)] transition-all flex items-center gap-2"
             onClick={onClick}
-            title={promptInstall ? "Install App" : "App installation not yet ready or already installed"}
-            disabled={!promptInstall}
+            aria-label="Install app"
+            className={cn("flex items-center gap-2 text-muted-foreground hover:text-foreground", className)}
         >
-            <Download className="h-4 w-4" />
-            <span className="hidden md:inline">Install App</span>
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden md:inline">Install app</span>
         </Button>
     );
 }

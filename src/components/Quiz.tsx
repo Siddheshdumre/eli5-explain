@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { BrainCircuit, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Rule } from "./editorial";
 import { supabase } from "@/lib/supabase";
 import { apiUrl } from "@/lib/api";
+import { focusRing } from "@/lib/editorial";
+import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
 export interface QuizQuestion {
@@ -98,7 +99,7 @@ export function Quiz({ data, originalContext, difficulty }: QuizProps) {
             }
         } catch (e) {
             console.error(e);
-            setExplanationStream("An error occurred while fetching the correction.");
+            setExplanationStream("The tutor couldn’t explain this one. Check your connection and try the next question.");
         } finally {
             setIsExplaining(false);
         }
@@ -115,106 +116,108 @@ export function Quiz({ data, originalContext, difficulty }: QuizProps) {
         }
     };
 
+    const header = (
+        <div className="flex items-baseline justify-between gap-4">
+            <h3 className="t-small font-semibold">Knowledge Check</h3>
+            {!finished && (
+                <span className="t-label tabular-nums text-muted-foreground">
+                    {currentIndex + 1} of {data.questions.length}
+                </span>
+            )}
+        </div>
+    );
+
     if (finished) {
         return (
-            <Card className="mt-8 border-primary/20 bg-primary/5">
-                <CardContent className="pt-6 text-center space-y-4">
-                    <BrainCircuit className="h-12 w-12 text-primary mx-auto" />
-                    <h3 className="text-2xl font-bold">Quiz Complete!</h3>
-                    <p className="text-lg text-muted-foreground">
-                        You scored {score} out of {data.questions.length}.
-                    </p>
-                </CardContent>
-            </Card>
+            <section aria-label="Knowledge Check" className="mt-16 border-t pt-8">
+                {header}
+                <p className="mt-6 t-title">Quiz complete.</p>
+                <p className="mt-2 t-body text-foreground/75">
+                    You scored {score} of {data.questions.length}.
+                </p>
+            </section>
         );
     }
 
     const currentQ = data.questions[currentIndex];
+    const answered = selectedOption !== null;
 
     return (
-        <Card className="mt-8 shadow-md border-primary/10">
-            <CardHeader className="bg-muted/20 border-b pb-4">
-                <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <BrainCircuit className="h-5 w-5 text-primary" />
-                        Knowledge Check
-                    </CardTitle>
-                    <span className="text-sm font-medium text-muted-foreground">
-                        Question {currentIndex + 1} of {data.questions.length}
-                    </span>
-                </div>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-                <h4 className="text-lg font-medium leading-tight">{currentQ.question}</h4>
+        <section aria-label="Knowledge Check" className="mt-16 border-t pt-8">
+            {header}
+            <p className="mt-6 t-title">{currentQ.question}</p>
 
-                <div className="space-y-3">
-                    {currentQ.options.map((option, idx) => {
-                        let btnVariant: "default" | "outline" | "destructive" | "secondary" = "outline";
-                        let showIcon = false;
-                        let icon = null;
-
-                        if (selectedOption !== null) {
-                            if (option === currentQ.correct_answer) {
-                                btnVariant = "default"; // Highlight correct answer always after click
-                                showIcon = true;
-                                icon = <CheckCircle2 className="h-4 w-4 ml-2" />;
-                            } else if (option === selectedOption && !isCorrect) {
-                                btnVariant = "destructive"; // Highlight wrong choice
-                                showIcon = true;
-                                icon = <XCircle className="h-4 w-4 ml-2" />;
-                            }
-                        }
-
-                        return (
-                            <Button
-                                key={idx}
-                                variant={btnVariant}
-                                className={`w-full justify-between h-auto py-3 px-4 text-left font-normal ${selectedOption === null ? 'hover:bg-primary/5 hover:border-primary/50' : ''}`}
+            <div role="group" aria-label="Answer options" className="mt-6">
+                <Rule heavy />
+                {currentQ.options.map((option, idx) => {
+                    const optionIsCorrect = option === currentQ.correct_answer;
+                    const isPicked = option === selectedOption;
+                    const verdict = answered && optionIsCorrect ? "Correct" : isPicked ? "Your pick" : null;
+                    return (
+                        <div key={idx}>
+                            <button
+                                type="button"
                                 onClick={() => handleOptionClick(option)}
-                                disabled={selectedOption !== null}
-                            >
-                                <span className="whitespace-normal">{option}</span>
-                                {showIcon && icon}
-                            </Button>
-                        );
-                    })}
-                </div>
-
-                {selectedOption !== null && (
-                    <div className="pt-4 border-t animate-in fade-in slide-in-from-top-2">
-                        {isCorrect ? (
-                            <div className="p-4 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold">Correct!</p>
-                                    <p className="text-sm opacity-90">Great job retaining that information.</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-lg space-y-3">
-                                <div className="flex items-center gap-2 text-destructive font-semibold">
-                                    <BrainCircuit className="h-4 w-4" />
-                                    AI Tutor Feedback
-                                </div>
-                                {isExplaining && !explanationStream && (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Loader2 className="h-4 w-4 animate-spin" /> Thinking...
-                                    </div>
+                                disabled={answered}
+                                aria-pressed={isPicked}
+                                className={cn(
+                                    "group grid w-full grid-cols-[2.5rem_1fr] items-baseline gap-y-1 py-4 text-left t-body sm:grid-cols-[2.5rem_1fr_auto] sm:gap-x-6",
+                                    focusRing,
+                                    answered && !optionIsCorrect && !isPicked && "text-foreground/75"
                                 )}
-                                <div className="prose prose-sm max-w-none text-slate-700 dark:prose-invert dark:text-slate-300">
+                            >
+                                <span
+                                    className={cn(
+                                        "font-medium tabular-nums text-foreground/75 transition-colors",
+                                        !answered && "group-hover:text-foreground"
+                                    )}
+                                    aria-hidden="true"
+                                >
+                                    {String.fromCharCode(65 + idx)}
+                                </span>
+                                <span
+                                    className={cn("quiz-option-text", answered && optionIsCorrect && "font-semibold")}
+                                    data-struck={isPicked && !optionIsCorrect}
+                                >
+                                    {option}
+                                </span>
+                                {verdict && (
+                                    <span className={cn("col-start-2 t-small sm:col-start-3 sm:text-right", optionIsCorrect ? "font-semibold" : "text-foreground/75")}>
+                                        {verdict}
+                                    </span>
+                                )}
+                            </button>
+                            <Rule />
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div aria-live="polite">
+                {answered && (
+                    <div className="reveal-in mt-10">
+                        {isCorrect ? (
+                            <p className="t-body font-semibold">Correct! Great job retaining that information.</p>
+                        ) : (
+                            <figure>
+                                {isExplaining && !explanationStream && (
+                                    <p role="status" className="t-body text-muted-foreground">Thinking…</p>
+                                )}
+                                <blockquote className="prose prose-lg max-w-none dark:prose-invert">
                                     <ReactMarkdown>{explanationStream}</ReactMarkdown>
-                                </div>
-                            </div>
+                                </blockquote>
+                                <figcaption className="mt-4 t-small font-medium text-foreground/75">AI Tutor Feedback</figcaption>
+                            </figure>
                         )}
 
-                        <div className="mt-6 flex justify-end">
-                            <Button onClick={handleNext} disabled={isExplaining && !isCorrect}>
-                                {currentIndex < data.questions.length - 1 ? "Next Question" : "Finish Quiz"}
+                        <div className="mt-8">
+                            <Button onClick={handleNext} disabled={isExplaining && !isCorrect} className="h-10 t-small">
+                                {currentIndex < data.questions.length - 1 ? "Next question" : "Finish quiz"}
                             </Button>
                         </div>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     );
 }

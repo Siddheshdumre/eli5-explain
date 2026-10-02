@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T18:00:00Z",
+  "title": "Design System: ELI5.AI",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "hsl(0 0% 100%)",
+        "cssVar": "--background (light)",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#8c8c8c",
+          "#bfbfbf",
+          "#e6e6e6",
+          "#ffffff"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "hsl(222.2 84% 4.9%)",
+        "cssVar": "--foreground (light)",
+        "tonalRamp": [
+          "#020817",
+          "#0b1a3d",
+          "#1a2a52",
+          "#35436a",
+          "#5a6582",
+          "#8a92a6",
+          "#c2c7d2",
+          "#eef0f4"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink, Secondary",
+        "canonical": "hsl(var(--foreground) / 0.75)",
+        "note": "Alpha of Ink; hex is resolved on Paper.",
+        "tonalRamp": [
+          "#1d212b",
+          "#2b303b",
+          "#414651",
+          "#5b606a",
+          "#7a7e86",
+          "#9ea1a8",
+          "#c8cace",
+          "#eeeff1"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "hsl(0 0% 3.5%)",
+        "cssVar": "--background (dark)",
+        "tonalRamp": [
+          "#090909",
+          "#1a1a1a",
+          "#2e2e2e",
+          "#474747",
+          "#666666",
+          "#8c8c8c",
+          "#bfbfbf",
+          "#f2f2f2"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "hsl(0 0% 93%)",
+        "cssVar": "--foreground (dark)",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#808080",
+          "#a6a6a6",
+          "#c7c7c7",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "night-ink-secondary": {
+        "role": "neutral",
+        "displayName": "Night Ink, Secondary",
+        "canonical": "hsl(var(--foreground) / 0.75)",
+        "note": "Alpha of Night Ink; hex is resolved on Night.",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#5c5c5c",
+          "#7a7a7a",
+          "#999999",
+          "#b4b4b4",
+          "#d4d4d4",
+          "#f0f0f0"
+        ]
+      },
+      "signal-cyan": {
+        "role": "primary",
+        "displayName": "Signal Cyan",
+        "canonical": "hsl(188.7 85.7% 53.3%)",
+        "cssVar": "--brand",
+        "tonalRamp": [
+          "#083344",
+          "#164e63",
+          "#155e75",
+          "#0e7490",
+          "#0891b2",
+          "#06b6d4",
+          "#22d3ee",
+          "#a5f3fc"
+        ]
+      },
+      "signal-cyan-hover": {
+        "role": "primary",
+        "displayName": "Signal Cyan, Hover",
+        "canonical": "hsl(var(--brand) / 0.85)",
+        "note": "Resolves to about #44daf1 on Paper and #1eb5cc on Night."
+      },
+      "on-signal": {
+        "role": "primary",
+        "displayName": "Signal Ink",
+        "canonical": "hsl(0 0% 3.5%)",
+        "cssVar": "--brand-foreground"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero H1 only; the closing statement uses a sibling clamp(2.75rem, 6vw, 4.5rem) / 0.98."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings."
+      },
+      "title-lg": {
+        "displayName": "Title Large",
+        "purpose": "The demo question above the level switch (hanging opening quote) and the quiz question (1.375 leading)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "The quoted research question."
+      },
+      "answer": {
+        "displayName": "Answer",
+        "purpose": "Demo answers under the level switch: 24px/1.5, -0.01em, max 44ch."
+      },
+      "body-lg": {
+        "displayName": "Body Large",
+        "purpose": "Hero lede (44ch) and tutor feedback (48ch); quiz options (1.4) and research searches (1.5) at this size; level tabs from sm at 500."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "One-line section ledes (max 32ch) and the build lede; level tabs on mobile at 500."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Definition-list terms (600) and detail, nav links, CTA label."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Two provenance captions, set-list lead-ins, CTA side notes, footer, quiz state markers. Sentence case."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "level-in",
+        "value": "level-in 280ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "keyframes": "from { opacity: 0; filter: blur(6px); transform: translateY(4px); } to { opacity: 1; filter: blur(0); transform: none; }",
+        "purpose": "The level switch: the incoming answer when the level changes. Not on first render; none under prefers-reduced-motion."
+      },
+      {
+        "name": "scroll-recede",
+        "value": "scroll-recede linear both; animation-timeline: scroll(root); animation-range: 0 90vh; transform-origin: left top",
+        "keyframes": "70% { opacity: 1; } to { transform: translate3d(0, 88px, 0) scale(0.97); opacity: 0.3; }",
+        "purpose": "Desktop (min-width 1024px) only: the hero pitch column recedes behind the answer column; opacity holds until 70% so the CTA never looks disabled on screen. Inside @media (prefers-reduced-motion: no-preference) and @supports (animation-timeline: view()); otherwise the finished state renders statically."
+      },
+      {
+        "name": "strike-draw",
+        "value": "strike-draw linear both; animation-timeline: --quiz; animation-range: cover 22% cover 34%",
+        "keyframes": "from { transform: scaleX(0); } to { transform: scaleX(1); }",
+        "purpose": "Draws the 2px currentColor strike through the wrong quiz pick from the left, on the quiz block's named view timeline (view-timeline: --quiz block). Inside @media (prefers-reduced-motion: no-preference) and @supports (animation-timeline: view()); otherwise the finished state renders statically."
+      },
+      {
+        "name": "mark-in",
+        "value": "mark-in linear both; animation-timeline: --quiz; animation-range: cover 30% cover 38%",
+        "keyframes": "from { opacity: 0; } to { opacity: 1; }",
+        "purpose": "Quiz verdict markers (Your answer / Correct) appear after the strike. Inside @media (prefers-reduced-motion: no-preference) and @supports (animation-timeline: view()); otherwise the finished state renders statically."
+      },
+      {
+        "name": "resolve",
+        "value": "resolve linear both",
+        "keyframes": "from { opacity: 0; filter: blur(6px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: none; }",
+        "purpose": "Tutor feedback on --quiz (cover 34% to cover 48%); each research search on its own view() timeline (entry 10% to cover 30%) so they arrive in order. Inside @media (prefers-reduced-motion: no-preference) and @supports (animation-timeline: view()); otherwise the finished state renders statically."
+      },
+      {
+        "name": "color-transition",
+        "value": "color, background-color, text-decoration-color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Hover state changes on links, tabs, controls and the CTA."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ],
+    "layout": {
+      "maxWidth": "80rem",
+      "gutter": "24px; 48px from md",
+      "grid": "12 columns from lg, 48px column gap",
+      "navHeight": "80px",
+      "sectionPadding": "64px mobile, 128px desktop, 160px for the close",
+      "definitionGrid": "1 column; 2 from sm; 3 from lg; 48px column gap, 32px row gap; term above detail with a 4px step",
+      "ledeMeasure": "Section ledes max 32ch, one short line"
+    },
+    "focus": {
+      "value": "outline: 2px solid hsl(var(--foreground)); outline-offset: 4px; border-radius: 6px",
+      "purpose": "Ink focus outline on every interactive element; the landing root sets --ring to the foreground."
+    },
+    "selection": {
+      "value": "background: hsl(var(--foreground)); color: hsl(var(--background))"
+    },
+    "scrollbar": {
+      "value": "scrollbar-color: hsl(var(--foreground) / 0.35) transparent"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary CTA",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The only accent-filled element; one per view, paired with a secondary-ink note.",
+      "html": "<div class=\"ds-cta-row\"><a class=\"ds-btn-primary\" href=\"#\">Ask your first question<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a><span class=\"ds-cta-note\">5 free questions. No sign-up.</span></div>",
+      "css": ".ds-cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; } .ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 24px; border-radius: 6px; background: hsl(var(--brand, 188.7 85.7% 53.3%)); color: hsl(var(--brand-foreground, 0 0% 3.5%)); font-size: 16px; font-weight: 600; text-decoration: none; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: hsl(var(--brand, 188.7 85.7% 53.3%) / 0.85); } .ds-btn-primary:focus-visible { outline: 2px solid hsl(var(--foreground, 222.2 84% 4.9%)); outline-offset: 4px; } .ds-cta-note { font-size: 14px; line-height: 20px; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); }"
+    },
+    {
+      "name": "Text Link",
+      "kind": "custom",
+      "refersTo": "link-text",
+      "description": "Inline and nav links: ink text, 40% underline that darkens on hover.",
+      "html": "<p class=\"ds-link-demo\">The full source is <a class=\"ds-link\" href=\"#\">on GitHub</a>.</p>",
+      "css": ".ds-link-demo { font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; font-size: 18px; line-height: 1.6; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); } .ds-link { color: hsl(var(--foreground, 222.2 84% 4.9%)); text-decoration: underline; text-decoration-color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.4); text-underline-offset: 4px; border-radius: 6px; transition: text-decoration-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-link:hover { text-decoration-color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-link:focus-visible { outline: 2px solid hsl(var(--foreground, 222.2 84% 4.9%)); outline-offset: 4px; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-quiet-control",
+      "description": "Plain 80px bar: mark and wordmark left; quiet icon control and text links right.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main\"><a class=\"ds-nav-mark\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><circle cx=\"19\" cy=\"5\" r=\"2\"/><circle cx=\"5\" cy=\"19\" r=\"2\"/><path d=\"M10.4 21.9a10 10 0 0 0 9.941-15.416\"/><path d=\"M13.5 2.1a10 10 0 0 0-9.841 15.416\"/></svg>ELI5.AI</a><div class=\"ds-nav-right\"><button class=\"ds-nav-icon\" aria-label=\"Switch to dark mode\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/></svg></button><a class=\"ds-nav-link\" href=\"#\">Log in</a><a class=\"ds-nav-link\" href=\"#\">Open the app</a></div></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 80px; font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-nav-mark { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: inherit; text-decoration: none; border-radius: 6px; } .ds-nav-right { display: flex; align-items: center; gap: 16px; } .ds-nav-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); cursor: pointer; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-icon:hover { color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-nav-link { font-size: 16px; font-weight: 500; color: inherit; text-decoration: underline; text-decoration-color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.4); text-underline-offset: 4px; border-radius: 6px; } .ds-nav-link:hover { text-decoration-color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-nav-mark:focus-visible, .ds-nav-icon:focus-visible, .ds-nav-link:focus-visible { outline: 2px solid hsl(var(--foreground, 222.2 84% 4.9%)); outline-offset: 4px; }"
+    },
+    {
+      "name": "Level Switch",
+      "kind": "custom",
+      "refersTo": "tab-level",
+      "description": "Signature: text tabs (18px, 20px from sm) with a 2px ink bar; answers at 24px/44ch; the incoming answer plays level-in.",
+      "html": "<div class=\"ds-levels\"><div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Explanation level\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">ELI5 (Child)</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Intermediate</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Expert</button></div><p class=\"ds-answer ds-level-in\">Imagine a super-deep sand pit at the playground.</p></div>",
+      "css": ".ds-levels { font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-tabs { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 -8px; } .ds-tab { position: relative; height: 48px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 18px; font-weight: 500; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); cursor: pointer; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-tab::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: 0; height: 2px; background: transparent; } .ds-tab:hover { color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-tab[aria-selected='true'] { color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-tab[aria-selected='true']::after { background: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-tab:focus-visible { outline: 2px solid hsl(var(--foreground, 222.2 84% 4.9%)); outline-offset: 4px; } .ds-answer { margin-top: 32px; max-width: 44ch; font-size: 24px; line-height: 1.5; letter-spacing: -0.01em; } @media (min-width: 640px) { .ds-tab { font-size: 20px; } } .ds-level-in { animation: ds-level-in 280ms cubic-bezier(0.16, 1, 0.3, 1); } @keyframes ds-level-in { from { opacity: 0; filter: blur(6px); transform: translateY(4px); } to { opacity: 1; filter: blur(0); transform: none; } } @media (prefers-reduced-motion: reduce) { .ds-level-in { animation: none; } }"
+    },
+    {
+      "name": "Set Quiz List",
+      "kind": "custom",
+      "description": "Product output set as type: lettered 20px options, state by weight, a drawn 2px strike and small line icons; scroll draws the strike then shows the verdicts.",
+      "html": "<div class=\"ds-quiz-stage\"><ol class=\"ds-quiz\"><li><span class=\"ds-quiz-key\">A</span><strong>The rim of the pit</strong><span class=\"ds-quiz-state ds-quiz-ok ds-quiz-mark\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Correct</span></li><li><span class=\"ds-quiz-key\">B</span><span class=\"ds-quiz-strike\"><s>The bottom of the pit</s></span><span class=\"ds-quiz-state ds-quiz-mark\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg>Your answer</span></li><li><span class=\"ds-quiz-key\">C</span><span>The sand itself</span></li></ol></div>",
+      "css": ".ds-quiz { list-style: none; margin: 0; padding: 0; font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-quiz li { display: flex; align-items: baseline; gap: 16px; padding: 8px 0; font-size: 20px; line-height: 1.4; } .ds-quiz strong { font-weight: 600; } .ds-quiz s { text-decoration: none; } .ds-quiz-strike { position: relative; } .ds-quiz-strike::after { content: ''; position: absolute; inset-inline: 0; top: 55%; height: 2px; background: currentColor; transform-origin: left center; } .ds-quiz-key { width: 24px; flex-shrink: 0; font-weight: 500; font-variant-numeric: tabular-nums; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); } .ds-quiz-state { display: flex; align-items: center; gap: 4px; font-size: 14px; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); } .ds-quiz-state svg { align-self: center; } .ds-quiz-ok { font-weight: 500; color: hsl(var(--foreground, 222.2 84% 4.9%)); } @media (prefers-reduced-motion: no-preference) { @supports (animation-timeline: view()) { .ds-quiz-stage { view-timeline: --ds-quiz block; } .ds-quiz-strike::after { animation: ds-strike-draw linear both; animation-timeline: --ds-quiz; animation-range: cover 22% cover 34%; } .ds-quiz-mark { animation: ds-mark-in linear both; animation-timeline: --ds-quiz; animation-range: cover 30% cover 38%; } } } @keyframes ds-strike-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } } @keyframes ds-mark-in { from { opacity: 0; } to { opacity: 1; } }"
+    },
+    {
+      "name": "Definition List",
+      "kind": "custom",
+      "description": "Utility-density stack grid: term above detail, 1/2/3 columns.",
+      "html": "<dl class=\"ds-dl\"><div><dt>Model</dt><dd>gpt-oss-120b on Groq, streamed live</dd></div><div><dt>Research</dt><dd>LangGraph agent with Tavily search</dd></div><div><dt>Backend</dt><dd>FastAPI on Vercel serverless</dd></div></dl>",
+      "css": ".ds-dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 32px 48px; font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; font-size: 16px; color: hsl(var(--foreground, 222.2 84% 4.9%)); } @media (min-width: 640px) { .ds-dl { grid-template-columns: repeat(2, 1fr); } } @media (min-width: 1024px) { .ds-dl { grid-template-columns: repeat(3, 1fr); } } .ds-dl dt { font-weight: 600; } .ds-dl dd { margin: 4px 0 0; line-height: 1.6; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); }"
+    },
+    {
+      "name": "Research Trace",
+      "kind": "custom",
+      "description": "The agent's searches as a numbered 20px/1.5 list; each resolves on its own view timeline so they arrive in order.",
+      "html": "<div class=\"ds-trace\"><p class=\"ds-trace-lead\">It searched the web for:</p><ol><li class=\"ds-resolve\"><span class=\"ds-trace-key\">1</span><span>“2024 discovery wind outflow Sagittarius A* 2024”</span></li><li class=\"ds-resolve\"><span class=\"ds-trace-key\">2</span><span>“recent discoveries about the black hole at the centre of the Milky Way”</span></li></ol></div>",
+      "css": ".ds-trace { font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif; color: hsl(var(--foreground, 222.2 84% 4.9%)); } .ds-trace-lead { margin: 0; font-size: 14px; font-weight: 500; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); } .ds-trace ol { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 16px; } .ds-trace li { display: flex; gap: 16px; font-size: 20px; line-height: 1.5; } .ds-trace-key { width: 24px; flex-shrink: 0; font-weight: 500; font-variant-numeric: tabular-nums; color: hsl(var(--foreground, 222.2 84% 4.9%) / 0.75); } @media (prefers-reduced-motion: no-preference) { @supports (animation-timeline: view()) { .ds-resolve { animation: ds-resolve linear both; animation-timeline: view(); animation-range: entry 10% cover 30%; } } } @keyframes ds-resolve { from { opacity: 0; filter: blur(6px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Printed Answer",
+    "overview": "The system of record is the marketing landing surface (`src/pages/Landing.tsx`): austere editorial monochrome that follows the visitor's system theme, paper white by day and near black by night. The page reads like a well-set essay rather than a software brochure. Real product output (an answer, a quiz correction, a research trace) is set as typography, not framed in mock windows, cards, or chips. Separation comes from whitespace alone on an 8px grid; there are no containers, borders, shadows, or gradients.\n\nColor is almost absent. Ink comes at exactly two strengths, full and 75%, and a single cyan is spent only on the primary call to action. One grotesk family, Schibsted Grotesk, carries everything from 88px extra-bold headlines to 14px captions, with hierarchy made by weight, size, and tight negative tracking at the top of the scale. Motion is authored, never ambient: the level switch resolves the new answer out of a soft blur, and a small set of native scroll-linked animations act out what the product does (the pitch recedes behind the answer, the quiz grades itself as you read it, the research searches arrive in the order they ran). Text is kept short: one-line ledes, terse term-and-detail rows, and real output doing the persuading.\n\nScope: the in-app chat (`/app`), Profile, Login/Signup/404, and About/Features were not rebuilt in this world. They still run on the shared shadcn tokens in `src/index.css` (see Layout and Do's and Don'ts). New surfaces and migrations should adopt this document.",
+    "keyCharacteristics": [
+      "Theme follows the system (`prefers-color-scheme`), with a manual toggle; no flash on load.",
+      "Two ink strengths (100% / 75%), both AAA in both themes.",
+      "One accent (signal cyan) reserved for the primary CTA.",
+      "One family (Schibsted Grotesk Variable, self-hosted), weights 400 to 800.",
+      "Whitespace-only separation on an 8px grid; asymmetric 12-column layout.",
+      "One control radius (6px). Flat: no elevation at all.",
+      "Motion that enacts product behaviour: a 280ms blur-and-fade on level change plus native CSS scroll-driven animations; the finished state is the default and reduced motion gets it statically."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Signal Cyan fills the primary CTA and appears nowhere else: not in links, focus rings, tabs, icons, or decoration. The landing root overrides `--ring` to the foreground so even focus stays in ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Inks Rule",
+        "body": "Text uses the foreground at 100% or 75% opacity, never a third tint and never a gray from outside the theme tokens. Emphasis inside prose is weight (600), not color.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Schibsted Grotesk is the only typeface. Hierarchy comes from weight, size, and tracking; never add a second display or mono face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tighten-As-You-Grow Rule",
+        "body": "Tracking tightens with size: -0.035em at display, -0.03em headline, -0.02em to -0.015em titles, -0.01em on the 24px Answer role, normal at 20px and below.",
+        "section": "typography"
+      },
+      {
+        "name": "The Whitespace Divider Rule",
+        "body": "If two things need separating, add space from the 8px scale. Never a rule line, card, or tinted panel. (Two-pixel ink bars that carry state, the selected-tab bar and the quiz strike, are marks on content, not dividers.)",
+        "section": "elevation"
+      },
+      {
+        "name": "The Motion Enacts the Product Rule",
+        "body": "A motion earns its place only by acting out something the product does: changing level, grading an answer, running a search. No generic fade-up section reveals, hover lifts, or decorative parallax layers.",
+        "section": "components"
+      },
+      {
+        "name": "The Finished State Default Rule",
+        "body": "The resting CSS is the final state; animation only adds the approach to it. No scroll hijacking, no smooth-scroll or animation libraries, and always a static reduced-motion path.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** follow the system theme and support both palettes; set `theme-color` per scheme (paper and night) and apply the theme class before first paint.",
+      "**Do** keep text to the two ink strengths (100% and 75%) and emphasis to weight.",
+      "**Do** spend Signal Cyan only on the one primary CTA per view.",
+      "**Do** separate with whitespace on the 8px scale (16 / 24 / 32 / 48 / 64 / 128px).",
+      "**Do** show real product output set as type; caption it only where provenance is not self-evident, one line in Label style.",
+      "**Do** keep copy short: one-line section ledes (max 32ch), terse term-and-detail rows.",
+      "**Do** keep every interactive target at least 40px tall (48px for the CTA and tabs) and give it the ink focus outline.",
+      "**Do** honor `prefers-reduced-motion` by removing level-in and every scroll-linked animation, leaving the finished state.",
+      "**Do** build scroll motion with native scroll-driven CSS behind `@supports (animation-timeline: view())`, with the finished state as the default."
+    ],
+    "donts": [
+      "**Don't** use cyan for links, focus rings, icons, tabs, highlights, or decoration.",
+      "**Don't** add cards, borders, rule lines, shadows, gradients, glows, or tinted panels.",
+      "**Don't** introduce a second typeface or a third ink tint.",
+      "**Don't** frame product output in fake app windows or device chrome.",
+      "**Don't** use a radius other than 6px, or round content blocks.",
+      "**Don't** add small uppercase labels above headings; captions sit below or beside what they describe, in sentence case.",
+      "**Don't** add motion that does not enact product behaviour: no generic fade-up section reveals, hover lifts, or decorative parallax layers.",
+      "**Don't** hijack scroll or add smooth-scroll or animation libraries.",
+      "**Don't** let a scroll animation dim a live control: fades wait until the element is leaving the viewport."
+    ]
+  }
+}

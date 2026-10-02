@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import { Quiz, QuizData } from "./Quiz";
 import { supabase } from "@/lib/supabase";
@@ -6,19 +6,36 @@ import { apiUrl } from "@/lib/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Card, CardContent } from "./ui/card";
-import { Loader2, Brain, Sparkles, Cpu, Send } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { ShareSnapshot } from "./ShareSnapshot";
+import { Rule } from "./editorial";
+import { fieldInputClass, focusRing } from "@/lib/editorial";
+import { cn } from "@/lib/utils";
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   created_at?: string;
+}
+
+// Starter questions for an empty conversation; picking one fills the input
+const EXAMPLES = ["How do black holes work?", "Why is the sky blue?", "What does a central bank do?"];
+
+// Settings bar selects: a label and a borderless trigger on one line
+const settingTrigger =
+  "h-10 w-auto gap-2 border-0 bg-transparent px-2 t-small font-medium shadow-none focus:ring-2 focus:ring-ring focus:ring-offset-0";
+
+function Setting({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="t-label text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
 }
 
 export function ELI5Question({ threadId }: { threadId?: string }) {
@@ -36,6 +53,7 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -232,16 +250,20 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto relative rounded-xl bg-background/50 border shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 5rem)' }}>
-      {/* Settings Header pinned to top */}
-      <div className="border-b bg-card/95 backdrop-blur-sm shrink-0 z-10 px-4 py-3">
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
+  const pickExample = (example: string) => {
+    setQuestion(example);
+    inputRef.current?.focus();
+  };
 
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+  return (
+    <div className="flex flex-col" style={{ height: 'calc(100dvh - 3.5rem)' }}>
+      {/* Settings: one ruled bar */}
+      <div className="shrink-0 border-b">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2 md:px-6">
+          <Setting label="Level">
             <Select value={difficulty} onValueChange={setDifficulty}>
-              <SelectTrigger className="h-8 text-xs bg-muted/50">
-                <SelectValue placeholder="Difficulty" />
+              <SelectTrigger aria-label="Level" className={settingTrigger}>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ELI5 (Child)">ELI5 (Child)</SelectItem>
@@ -249,117 +271,129 @@ export function ELI5Question({ threadId }: { threadId?: string }) {
                 <SelectItem value="Expert">Expert</SelectItem>
               </SelectContent>
             </Select>
+          </Setting>
+          <Setting label="Format">
             <Select value={format} onValueChange={setFormat}>
-              <SelectTrigger className="h-8 text-xs bg-muted/50">
-                <SelectValue placeholder="Style" />
+              <SelectTrigger aria-label="Format" className={settingTrigger}>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Standard">Standard</SelectItem>
                 <SelectItem value="Storytelling">Storytelling</SelectItem>
-                <SelectItem value="Technical Breakdown">Tech Breakdown</SelectItem>
+                <SelectItem value="Technical Breakdown">Technical Breakdown</SelectItem>
               </SelectContent>
             </Select>
+          </Setting>
+          <Setting label="Source">
             <Select value={contextSource} onValueChange={setContextSource}>
-              <SelectTrigger className="h-8 text-xs bg-muted/50">
-                <SelectValue placeholder="Source" />
+              <SelectTrigger aria-label="Source" className={settingTrigger}>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="wikipedia">Basic Wikipedia</SelectItem>
                 <SelectItem value="advanced_web_search">Agentic Web Search</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2 pl-2 border-l border-muted">
-              <Switch id="socrates-mode" checked={enableSocrates} onCheckedChange={setEnableSocrates} />
-              <Label htmlFor="socrates-mode" className="text-xs font-semibold whitespace-nowrap cursor-pointer">Socrates Quiz</Label>
-            </div>
+          </Setting>
+          <div className="flex h-10 items-center gap-2">
+            <Switch id="socrates-mode" checked={enableSocrates} onCheckedChange={setEnableSocrates} />
+            <Label htmlFor="socrates-mode" className="cursor-pointer t-small font-medium">Socrates Quiz</Label>
           </div>
         </div>
       </div>
 
-      {/* Chat Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-28 min-h-0">
-        {messages.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-70">
-            <Sparkles className="h-12 w-12 mb-4" />
-            <h2 className="text-xl font-medium">Start a new explanation</h2>
-            <p className="text-sm text-center max-w-sm mt-2">Adjust your difficulty and style settings above, then ask a question below to begin tracking your thread.</p>
-          </div>
-        )}
+      {/* Conversation, set like a printed Q&A */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 pb-16 pt-10 md:px-6">
+          {messages.length === 0 && !loading && (
+            <div>
+              <h2 className="t-headline">Ask anything.</h2>
+              <p className="mt-8 max-w-[40ch] t-body text-foreground/75">
+                Pick a level above, then ask below. Answers stream in as they’re written.
+              </p>
+              <p className="mt-10 t-label font-medium text-muted-foreground">Try one:</p>
+              <ul className="mt-3 max-w-xl">
+                <li aria-hidden="true">
+                  <Rule heavy />
+                </li>
+                {EXAMPLES.map((example) => (
+                  <li key={example}>
+                    <button
+                      type="button"
+                      onClick={() => pickExample(example)}
+                      className={cn("w-full py-4 text-left t-body transition-colors hover:text-foreground/75", focusRing)}
+                    >
+                      {example}
+                    </button>
+                    <Rule />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        {messages.map((m, idx) => (
-          <div key={m.id || idx} className={`flex w-full ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 ${m.role === 'user' ? 'bg-primary text-primary-foreground dark:bg-secondary dark:text-secondary-foreground rounded-br-sm' : 'bg-card border shadow-sm rounded-bl-sm'}`}>
-              {m.role === 'assistant' && (
-                <div className="flex items-center justify-between mb-2 text-primary font-medium text-sm">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="h-4 w-4" />
-                    Socrates
+          <ol>
+            {messages.map((m, idx) => (
+              <li key={m.id || idx} className={cn(m.role === 'user' && idx > 0 && "mt-16 border-t pt-12")}>
+                {m.role === 'user' ? (
+                  <h2 className="t-title">{m.content}</h2>
+                ) : (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="t-label font-medium text-muted-foreground">Socrates</p>
+                      {m.content && (
+                        <ShareSnapshot
+                          explanation={m.content}
+                          question={messages[idx - 1]?.content || "ELI5 Explanation"}
+                          difficulty={difficulty}
+                        />
+                      )}
+                    </div>
+                    <div className="prose prose-lg mt-2 max-w-none dark:prose-invert prose-headings:tracking-tight prose-strong:font-semibold">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                    {!m.content && loading && idx === messages.length - 1 && (
+                      <p role="status" className="t-body text-muted-foreground">Thinking…</p>
+                    )}
                   </div>
-                  {m.content && (
-                    <ShareSnapshot
-                      explanation={m.content}
-                      question={messages[idx - 1]?.content || "ELI5 Explanation"}
-                      difficulty={difficulty}
-                    />
-                  )}
-                </div>
-              )}
-              <div className={`prose prose-sm max-w-none ${m.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
-                <ReactMarkdown>{m.content}</ReactMarkdown>
-                {m.role === 'assistant' && !m.content && loading && idx === messages.length - 1 && (
-                  <span className="flex items-center gap-2 text-muted-foreground animate-pulse mt-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Thinking...
-                  </span>
                 )}
-              </div>
-            </div>
-          </div>
-        ))}
+              </li>
+            ))}
+          </ol>
 
-        {/* Render Quiz below the last assistant message if available */}
-        {quizData && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 pt-4 flex justify-start">
-            <div className="max-w-[85%] md:max-w-[75%]">
-              <Quiz data={quizData} originalContext={messages[messages.length - 1].content} difficulty={difficulty} />
-            </div>
-          </div>
-        )}
-        {quizLoading && (
-          <div className="flex flex-col items-start justify-center text-muted-foreground animate-pulse max-w-[85%] md:max-w-[75%] bg-card border shadow-sm rounded-2xl rounded-bl-sm px-5 py-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Brain className="h-4 w-4" />
-              <p className="text-sm font-medium">Formulating Quiz...</p>
-            </div>
-          </div>
-        )}
+          {/* Render Quiz below the last assistant message if available */}
+          {quizData && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
+            <Quiz data={quizData} originalContext={messages[messages.length - 1].content} difficulty={difficulty} />
+          )}
+          {quizLoading && (
+            <p role="status" className="mt-12 t-small text-muted-foreground">Writing a Knowledge Check…</p>
+          )}
 
-        <div ref={endOfMessagesRef} className="h-1 w-full shrink-0" />
+          <div ref={endOfMessagesRef} className="h-1 w-full shrink-0" />
+        </div>
       </div>
 
-      {/* Input Form at Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/95 to-transparent pt-10">
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="relative flex items-center shadow-lg border rounded-full bg-card overflow-hidden focus-within:ring-1 focus-within:ring-primary">
+      {/* Composer: a ruled bar with the one brand action */}
+      <div className="shrink-0 border-t bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-4 md:px-6">
+          <form onSubmit={handleSubmit} className="flex items-center gap-3">
+            <label htmlFor="question" className="sr-only">Your question</label>
             <Input
-              placeholder="Ask a follow-up question..."
+              id="question"
+              ref={inputRef}
+              placeholder={messages.length ? "Ask a follow-up…" : "Ask anything…"}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="border-0 focus-visible:ring-0 h-14 pl-6 pr-14 text-base bg-transparent shadow-none"
+              className={cn(fieldInputClass, "flex-1 t-body")}
               disabled={loading}
+              autoComplete="off"
               autoFocus
             />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={loading || !question.trim()}
-              className="absolute right-2 rounded-full h-10 w-10 shrink-0"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            <Button type="submit" variant="brand" size="cta" disabled={loading || !question.trim()}>
+              {loading ? "Answering…" : "Ask"}
             </Button>
           </form>
-          <div className="text-center mt-2 text-[10px] text-muted-foreground hidden sm:block">
-            AI can make mistakes. Consider verifying important information.
-          </div>
+          <p className="mt-2 t-label text-muted-foreground">AI can make mistakes. Check important facts.</p>
         </div>
       </div>
     </div>
