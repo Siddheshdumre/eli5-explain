@@ -1,5 +1,9 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Wordmark } from "@/components/editorial";
+import { quietControl } from "@/lib/editorial";
 
 const NotFound = () => {
   const location = useLocation();
@@ -12,13 +16,26 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-[80rem] px-6 md:px-12">
+        <header className="flex h-20 items-center justify-between gap-4">
+          <Wordmark />
+          <ThemeToggle className={quietControl} />
+        </header>
+        <main className="grid grid-cols-1 gap-x-12 pb-24 pt-12 lg:grid-cols-12 lg:pt-24">
+          <div className="lg:col-span-7">
+            <p className="t-display tabular-nums">404</p>
+            <h1 className="mt-12 t-headline">This page doesn’t exist.</h1>
+            <p className="mt-10 max-w-[40ch] t-body text-foreground/75">
+              Nothing lives at <span className="font-medium text-foreground">{location.pathname}</span>.
+            </p>
+            <div className="mt-12">
+              <Button asChild variant="brand" size="cta">
+                <Link to="/">Back to home</Link>
+              </Button>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

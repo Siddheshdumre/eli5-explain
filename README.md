@@ -1,113 +1,101 @@
-# ELI5 - Explain Like I'm Five
+# ELI5 Universe Builder 🌌
 
-An AI-powered application that explains complex topics in simple terms, using the Mistral 7B model through Together API. The application provides explanations at different difficulty levels (Child, Teen, Adult) and in various formats (Standard, Story, Technical).
+An advanced, AI-powered conversational platform that explains complex topics effortlessly. Powered by ultra-fast open models on the Groq API (default: OpenAI gpt-oss-120b), this application acts as a stateful, agentic tutor capable of adapting to different audiences, searching the web in real-time, and aggressively verifying learning through generated quizzes.
 
-## Features
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-- 🤖 Powered by Mistral 7B AI model via Together API
-- 📚 Wikipedia integration for context-aware explanations
-- 🎯 Multiple difficulty levels:
-  - ELI5 (Child) - Simple explanations for young children
-  - Teen - More detailed explanations for teenagers
-  - Adult - Comprehensive explanations for adults
-- 📝 Multiple explanation formats:
-  - Standard - Clear and concise explanations
-  - Story - Narrative-style explanations
-  - Technical - Detailed technical explanations
-- 🎨 Modern UI built with React, TypeScript, and Shadcn UI
-- ⚡ Fast backend using FastAPI
+## ✨ Core Features
 
-## Tech Stack
+*   🧠 **Adaptive Persona Contexts:** Tailor responses dynamically across multiple difficulties (ELI5 Child, Intermediate Teen, Expert Adult), ensuring maximum relatability and appropriate vocabulary without cheesy filler.
+*   💬 **Persistent Chat History:** Sign in, start a thread, and pick it up later. Built on a fully normalized Supabase PostgreSQL database, your conversation threads and messages are securely persisted and loaded into the sleek sidebar interface.
+*   🎯 **Socrates Mode (Active Learning):** Toggle this mode to instantly generate bespoke 3-question multiple-choice quizzes automatically derived from the AI's explanation. Incorrect answers trigger an immediate, Socratic micro-explanation explaining exactly *why* the thought process was flawed. 
+*   🌐 **Agentic Web Search:** Ask questions requiring up-to-date knowledge. Powered by LangGraph and Tavily, the underlying AI operates as a ReAct agent to independently research, synthesize, and answer questions using standard Google search protocols.
+*   🔒 **Secure Authentication:** Integrated JWT-based authentication using Supabase Auth. Users must log in, ensuring their history and profile context is siloed securely using Row Level Security (RLS).
+*   🎭 **Flexible Output Formatting:** Request answers as simple summaries, storytelling narratives, or dense technical breakdowns using markdown and structured responses.
 
-### Frontend
-- React
-- TypeScript
-- Vite
-- Shadcn UI
-- Tailwind CSS
+## 🛠 Tech Stack
 
-### Backend
-- FastAPI
-- Python
-- Together API (Mistral 7B)
-- Wikipedia API
+### Frontend Architecture
+*   **React 18 + TypeScript:** Strongly-typed component architecture.
+*   **Vite:** Extremely fast frontend tooling.
+*   **Shadcn UI & Tailwind CSS:** Beautiful, accessible, zero-runtime-cost styling system leveraging Radix UI primitives.
+*   **React Router:** For deep-linking into specific chat threads and secure route handling.
+*   **Supabase JS:** Seamless authentication and real-time database querying.
 
-## Setup
+### Backend Architecture
+*   **FastAPI (Python):** Blazing fast, asynchronous HTTP server handling streaming responses dynamically.
+*   **Groq API (gpt-oss-120b, configurable via `GROQ_MODEL`):** Providing ultra-fast inference to give the LLM near-zero latency.
+*   **LangGraph & LangChain:** Orchestrating the "Agentic Web Search" workflows and structured output generation.
+*   **Supabase (PostgreSQL):** Managing users, threads, messages, and RLS policies.
+*   **Wikipedia & Tavily Search API:** Fetching live unstructured text context for grounded RAG (Retrieval-Augmented Generation).
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- Python 3.8 or higher
-- Together API key
+*   Node.js 20 or higher
+*   Python 3.12 or 3.13 (3.11 also works)
+*   A [Groq](https://console.groq.com/keys) API Key (required)
+*   A [Supabase](https://supabase.com/) Project: URL & anon key (required for login and chat history; guest mode works without it)
+*   A [Tavily](https://app.tavily.com/) API Key (optional, only for Agentic Web Search)
 
-### Frontend Setup
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/eli5-explain.git
-cd eli5-explain
+### 1. Fill in the env files
+The app uses **two** env files. Both are git-ignored, and [`env.example`](env.example) documents every variable.
+
+`backend/.env`
+```env
+GROQ_API_KEY=gsk_...
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+TAVILY_API_KEY=tvly-...
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-2. Install dependencies
-```bash
-npm install
+`.env` (project root)
+```env
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_API_URL=
 ```
+Supabase values are in **Project Settings → API**. Use the *anon / publishable* key, never the *service_role* key.
 
-3. Start the development server
+### 2. Create the database tables (once)
+Open your Supabase project → **SQL Editor**, paste the contents of [`supabase/schema.sql`](supabase/schema.sql) and run it. This creates the `chat_threads`, `chat_messages` and `user_profiles` tables with Row Level Security.
+
+### 3. Start the app
+**Windows (one command):** double-click `start.bat` (or run `powershell -ExecutionPolicy Bypass -File start.ps1`).
+It installs missing dependencies, warns about empty env values, starts the backend in its own window, then starts the frontend and opens [http://localhost:8080](http://localhost:8080).
+
+**Manual (any OS)**, in two terminals:
 ```bash
+# Terminal 1 - backend on :8000
+cd backend
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# Terminal 2 - frontend on :8080 (proxies /api/* to :8000)
+npm ci
 npm run dev
 ```
 
-### Backend Setup
-1. Navigate to the backend directory
-```bash
-cd backend
-```
+**Docker:** `docker compose up -d --build`, then open [http://localhost](http://localhost).
 
-2. Create and activate virtual environment
-```bash
-python -m venv venv
-# On Windows
-.\venv\Scripts\activate
-# On Unix/MacOS
-source venv/bin/activate
-```
+To check the backend, open [http://localhost:8000/api/health](http://localhost:8000/api/health) (it shows which keys are configured) or run `python backend/test_api.py`.
 
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+> `backend/main.py` is the source of truth; `api/index.py` is an identical copy used by Vercel. After editing the backend, run `cp backend/main.py api/index.py`.
 
-4. Create a `.env` file in the backend directory with your Together API key:
-```
-TOGETHER_API_KEY=your_api_key_here
-TOGETHER_MODEL=mistralai/Mistral-7B-Instruct-v0.2
-PORT=8000
-ENVIRONMENT=development
-```
+## 🔮 Usage Journey
+1. Navigate to the web app, click **SignUp** (to create an account via Supabase auth), and then **Login**.
+2. Start a fresh thread in the chat interface. You can adjust the **Difficulty** and the **Source Option**. Try changing "Basic Wikipedia" to "Agentic Web Search" and ask a question about today's news!
+3. Toggle the **Socrates Quiz** switch, ask a complex explanation, and test your knowledge interactively below the chat bubble.
+4. Close the browser, bring it back up later, log in, and click your previous chat thread on the left-side Sidebar to resume right where you left off.
 
-5. Start the backend server
-```bash
-uvicorn main:app --reload --port 8000
-```
-
-## Usage
-
-1. Open http://localhost:8081/app in your browser
-2. Enter your question in the text box
-3. Select your preferred difficulty level
-4. Choose your preferred format
-5. Click "Ask Question" to get your explanation
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
+## 📝 License
 > ⚠️ This is a **proprietary project** by Siddhesh Dumre.
 > All rights reserved. No part of this code may be used, copied, or modified without explicit permission.
-
-## Acknowledgments
-
-- [Together AI](https://www.together.ai/) for providing the Mistral 7B API
-- [Wikipedia](https://www.wikipedia.org/) for content context
-- [Shadcn UI](https://ui.shadcn.com/) for the beautiful UI components

@@ -40,3 +40,4 @@ logs
 
 # System Files
 Thumbs.db
+__pycache__/

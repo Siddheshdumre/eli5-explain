@@ -1,4 +1,5 @@
 
+/// <reference types="vite-plugin-pwa/client" />
 /// <reference types="vite/client" />
 
 interface SpeechRecognition extends EventTarget {

@@ -49,6 +49,9 @@ services:
       args:
         # Empty = relative URL, Nginx proxies /api/* to backend
         VITE_API_URL: ""
+        # Read from the root .env (compose loads it automatically for ${...})
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
     container_name: eli5-frontend
     restart: unless-stopped
     ports:
@@ -60,7 +63,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 5s
       start_period: 10s

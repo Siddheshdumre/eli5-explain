@@ -2,10 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Definition of the design system. All colors, fonts, type roles and motion are defined here. */
 
 @layer base {
-  :root {
+  /* .light pins a subtree to the light palette even when dark mode is on (e.g. About/Features) */
+  :root, .light {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -22,73 +23,76 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* AAA: 9.4:1 on paper, 8.6:1 on muted */
+    --muted-foreground: 215 20% 29%;
 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
+    /* Critical states are set in ink, not a second hue: the only accent is the brand signal */
+    --destructive: 222.2 84% 4.9%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    /* Field edges meet 3:1 non-text contrast */
+    --input: 215 16% 52%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    /* One radius for every control */
+    --radius: 0.25rem;
+
+    /* Brand accent (same in both themes; dark text on it is AAA) */
+    --brand: 188.7 85.7% 53.3%;
+    --brand-foreground: 0 0% 3.5%;
 
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
     --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.2 84% 4.9%;
   }
 
+  /* Dark palette: near-black paper, ink in two strengths; cyan stays reserved for the brand signal */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 3.5%;
+    --foreground: 0 0% 93%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 93%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 93%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 0% 93%;
+    --primary-foreground: 0 0% 3.5%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 93%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 12%;
+    /* AAA: 8.8:1 on night, 7.3:1 on muted */
+    --muted-foreground: 0 0% 68%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 93%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 0% 93%;
+    --destructive-foreground: 0 0% 3.5%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 0 0% 16%;
+    --input: 0 0% 42%;
+    --ring: 0 0% 93%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 93%;
+    --sidebar-primary: 0 0% 93%;
+    --sidebar-primary-foreground: 0 0% 3.5%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 0 0% 93%;
   }
 }
 
@@ -97,7 +101,239 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  /* Scrollbars in the page's own ink instead of the browser default */
+  html {
+    scrollbar-color: hsl(var(--foreground) / 0.35) transparent;
   }
+
+  body {
+    @apply bg-background font-display text-foreground antialiased;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+  }
+
+  /* Re-resolve inherited text color inside light-pinned subtrees (body's color is dark-mode white) */
+  .light {
+    @apply text-foreground;
+    color-scheme: light;
+  }
+}
+
+/* Type roles. Line heights are unitless for fallback, then snapped to a 4px baseline where round() exists.
+   Display roles pull left by their side bearing so their ink lines up with body text on the same ray. */
+@layer components {
+  .t-display {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.96;
+    line-height: round(nearest, 0.96em, 4px);
+    margin-inline-start: -0.055em;
+    text-wrap: balance;
+  }
+
+  .t-display-2 {
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.96;
+    line-height: round(nearest, 0.96em, 4px);
+    margin-inline-start: -0.05em;
+    text-wrap: balance;
+  }
+
+  .t-headline {
+    font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    line-height: round(nearest, 1em, 4px);
+    margin-inline-start: -0.045em;
+    text-wrap: balance;
+  }
+
+  .t-title {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Set product prose (the demo answers) */
+  .t-lead {
+    font-size: 1.25rem;
+    line-height: 2rem;
+    text-wrap: pretty;
+  }
+
+  @media (min-width: 1024px) {
+    .t-lead {
+      font-size: 1.5rem;
+      line-height: 2.25rem;
+      letter-spacing: -0.01em;
+    }
+  }
+
+  .t-body {
+    font-size: 1.25rem;
+    line-height: 2rem;
+    text-wrap: pretty;
+  }
+
+  .t-small {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  /* Operate surfaces only (app chrome, metadata) */
+  .t-label {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Hangs an opening quotation mark into the margin so the letters keep the ray */
+  .hang-quote {
+    text-indent: -0.53em;
+  }
+}
+
+/* ---------- Motion ---------- */
+
+/* Tab switch: a state change, so it stays within 150ms */
+@keyframes level-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.level-in {
+  animation: level-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Quiz: a wrong pick is struck through line by line (native decoration, so it follows wrapped text) */
+.quiz-option-text {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quiz-option-text[data-struck="true"] {
+  text-decoration-color: currentColor;
+}
+
+/* Answer feedback appears as a crisp 150ms slide-and-reveal */
+@keyframes reveal-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(0.5em);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+.reveal-in {
+  animation: reveal-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Entry reveals: armed by script only when motion is allowed, so without JS everything simply shows.
+   Blocks slide up through a mask; rules draw from their left edge. */
+[data-reveal="armed"] {
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(0.5em);
+}
+
+[data-reveal="in"] {
+  clip-path: inset(0 0 0 0);
+  transform: none;
+  transition:
+    clip-path 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms),
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms);
+}
+
+[data-reveal-rule] {
+  transform-origin: left center;
+}
+
+[data-reveal-rule="armed"] {
+  transform: scaleX(0);
+}
+
+[data-reveal-rule="in"] {
+  transform: none;
+  transition: transform 640ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms);
+}
+
+/* Structural parallax (desktop): headlines travel slightly faster than the content columns beside them,
+   and the hero pitch settles back while the answer stays in front. Transform only: no scale, blur or fade. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    @media (min-width: 1024px) {
+      .parallax-rise {
+        animation: parallax-rise linear both;
+        animation-timeline: view();
+        animation-range: cover 0% cover 100%;
+      }
+
+      .scroll-recede {
+        animation: scroll-recede linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 100vh;
+      }
+    }
+  }
+}
+
+@keyframes parallax-rise {
+  from {
+    transform: translate3d(0, 40px, 0);
+  }
+  to {
+    transform: translate3d(0, -40px, 0);
+  }
+}
+
+@keyframes scroll-recede {
+  to {
+    transform: translate3d(0, 72px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-in,
+  .reveal-in {
+    animation: none;
+  }
+
+  .quiz-option-text {
+    transition: none;
+  }
+}
+
+/* Lenis inertial scrolling (landing only; the script never starts under reduced motion) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
 }
